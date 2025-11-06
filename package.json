@@ -1,0 +1,18 @@
+{
+  "name": "pokoro-tech",
+  "version": "1.0.0",
+  "description": "pokoro.tech - Portfolio and Web Tools",
+  "private": true,
+  "scripts": {
+    "sitemap": "tsx scripts/generate-sitemap.ts",
+    "build": "npm run sitemap",
+    "postbuild": "npm run sitemap"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "@types/node": "^20.11.5"
+  },
+  "keywords": ["portfolio", "web-tools", "games", "sitemap"],
+  "author": "pokoro",
+  "license": "MIT"
+}

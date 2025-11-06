@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ポートフォリオ | pokoro</title>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <link rel="stylesheet" href="portfolio-styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/icon.png" alt="pokoro" style="width: 32px; height: 32px; margin-right: 10px;">
+                <h2>pokoro</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/tool/index.html" class="nav-link">ツール</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/game/homepage.html" class="nav-link">ゲーム</a>
+                </li>
+                <li class="nav-item">
+                    <a href="https://pokoroblog.com/" class="nav-link" target="_blank">ブログ</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">pokoro</h1>
+            <p class="hero-subtitle">フルスタックエンジニア | Webアプリケーション開発者</p>
+            <a href="#projects" class="cta-button">プロジェクトを見る</a>
+        </div>
+        <div class="floating-particles"></div>
+    </section>
+
+    <section id="about" class="about">
+        <div class="container">
+            <h2 class="section-title">自己紹介</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p>
+                        こんにちは！私はフルスタックエンジニアのpokoroです。
+                        Web開発に情熱を持ち、ユーザーに価値を提供する
+                        アプリケーションの開発に取り組んでいます。
+                    </p>
+                    <p>
+                        フロントエンドからバックエンドまで幅広い技術スタックを扱い、
+                        常に新しい技術の習得に努めています。
+                        チームワークを重視し、効率的な開発プロセスを追求しています。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="skills" class="skills">
+        <div class="container">
+            <h2 class="section-title">スキル</h2>
+            <div class="skills-grid">
+                <div class="skill-category">
+                    <h3>フロントエンド</h3>
+                    <ul class="skill-list">
+                        <li>HTML5 / CSS3</li>
+                        <li>JavaScript (ES6+)</li>
+                        <li>React.js</li>
+                        <li>TypeScript</li>
+                        <li>レスポンシブデザイン</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>バックエンド</h3>
+                    <ul class="skill-list">
+                        <li>Node.js</li>
+                        <li>Python</li>
+                        <li>Express.js</li>
+                        <li>REST API設計</li>
+                        <li>データベース設計</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>その他</h3>
+                    <ul class="skill-list">
+                        <li>Git / GitHub</li>
+                        <li>Docker</li>
+                        <li>AWS基礎</li>
+                        <li>アジャイル開発</li>
+                        <li>テスト駆動開発</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="projects" class="projects">
+        <div class="container">
+            <h2 class="section-title">プロジェクト</h2>
+            <div class="projects-grid">
+                <div class="project-card">
+                    <h3>Webツール開発</h3>
+                    <p class="project-description">
+                        日常業務で使える実用的なWebツールを開発。
+                        JSON整形、Base64エンコード、QRコード生成、文字数カウント、正規表現テスター、画像リサイザーなど多数のツールを提供。
+                    </p>
+                    <div class="project-tech">
+                        <span class="tech-tag">HTML</span>
+                        <span class="tech-tag">CSS</span>
+                        <span class="tech-tag">JavaScript</span>
+                        <span class="tech-tag">Node.js</span>
+                    </div>
+                    <div class="project-links">
+                        <a href="/tool/index.html" target="_blank" class="project-link">ライブデモ</a>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <h3>Game開発</h3>
+                    <p class="project-description">
+                        様々なブラウザゲームを開発。
+                        React.jsを使用したクロスワードパズル、Python(Flask)による数独アプリなど、インタラクティブなゲーム体験を提供。
+                    </p>
+                    <div class="project-tech">
+                        <span class="tech-tag">React</span>
+                        <span class="tech-tag">Python</span>
+                        <span class="tech-tag">Flask</span>
+                        <span class="tech-tag">JavaScript</span>
+                    </div>
+                    <div class="project-links">
+                        <a href="/game/homepage.html" target="_blank" class="project-link">ライブデモ</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 pokoro. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="portfolio-script.js"></script>
+</body>
+</html>

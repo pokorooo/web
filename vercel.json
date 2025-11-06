@@ -1,0 +1,77 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/portfolio.html"
+    },
+    {
+      "source": "/tool",
+      "destination": "/tool/index.html"
+    },
+    {
+      "source": "/tool/(.*)",
+      "destination": "/tool/$1"
+    },
+    {
+      "source": "/game",
+      "destination": "/game/homepage.html"
+    },
+    {
+      "source": "/game/(.*)",
+      "destination": "/game/$1"
+    },
+    {
+      "source": "/blog",
+      "destination": "/blog/index.html"
+    },
+    {
+      "source": "/blog/(.*)",
+      "destination": "/blog/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, s-maxage=86400"
+        }
+      ]
+    },
+    {
+      "source": "/sitemap.xml.gz",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml"
+        },
+        {
+          "key": "Content-Encoding",
+          "value": "gzip"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, s-maxage=86400"
+        }
+      ]
+    },
+    {
+      "source": "/sitemaps/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, s-maxage=86400"
+        }
+      ]
+    }
+  ]
+}

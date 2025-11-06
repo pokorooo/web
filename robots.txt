@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Disallow private/development paths
+Disallow: /api/
+Disallow: /.git/
+Disallow: /node_modules/
+Disallow: /scripts/
+Disallow: /.vercel/
+Disallow: /draft/
+Disallow: /__tests__/
+
+# Sitemap
+Sitemap: https://www.pokoro.tech/sitemap.xml
