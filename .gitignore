@@ -1,0 +1,8 @@
+.vercel
+# Generated sitemaps
+sitemap.xml
+sitemap.xml.gz
+sitemaps/
+
+# Dependencies
+node_modules/
