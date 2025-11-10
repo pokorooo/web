@@ -1,0 +1,13 @@
+{
+  "name": "image-resizer-tool",
+  "version": "1.0.0",
+  "description": "画像リサイズ＆品質調整ツール - Image Resizer & Quality Adjustment Tool",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["image", "resize", "compression", "quality", "tool"],
+  "author": "",
+  "license": "MIT"
+}

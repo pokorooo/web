@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カラーパレットジェネレーター - Pokoro Tools</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useCallback, useMemo } = React;
+        
+        const ColorPaletteGenerator = () => {
+            const [baseColor, setBaseColor] = useState('#3b82f6');
+            const [copyMessage, setCopyMessage] = useState('');
+            const [expandedCategories, setExpandedCategories] = useState({
+                webNetwork: true,
+                design: false,
+                dataConversion: false
+            });
+            
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            // HEXからHSLに変換
+            const hexToHsl = useCallback((hex) => {
+                const r = parseInt(hex.slice(1, 3), 16) / 255;
+                const g = parseInt(hex.slice(3, 5), 16) / 255;
+                const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                let h, s, l = (max + min) / 2;
+
+                if (max === min) {
+                    h = s = 0;
+                } else {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    
+                    switch (max) {
+                        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                        case g: h = (b - r) / d + 2; break;
+                        case b: h = (r - g) / d + 4; break;
+                    }
+                    h /= 6;
+                }
+
+                return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+            }, []);
+
+            // HSLからHEXに変換
+            const hslToHex = useCallback((h, s, l) => {
+                h /= 360;
+                s /= 100;
+                l /= 100;
+
+                const c = (1 - Math.abs(2 * l - 1)) * s;
+                const x = c * (1 - Math.abs((h * 6) % 2 - 1));
+                const m = l - c / 2;
+                let r = 0, g = 0, b = 0;
+
+                if (0 <= h && h < 1/6) {
+                    r = c; g = x; b = 0;
+                } else if (1/6 <= h && h < 1/3) {
+                    r = x; g = c; b = 0;
+                } else if (1/3 <= h && h < 1/2) {
+                    r = 0; g = c; b = x;
+                } else if (1/2 <= h && h < 2/3) {
+                    r = 0; g = x; b = c;
+                } else if (2/3 <= h && h < 5/6) {
+                    r = x; g = 0; b = c;
+                } else if (5/6 <= h && h < 1) {
+                    r = c; g = 0; b = x;
+                }
+
+                r = Math.round((r + m) * 255);
+                g = Math.round((g + m) * 255);
+                b = Math.round((b + m) * 255);
+
+                return "#" + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+            }, []);
+
+            // HEXからRGBに変換
+            const hexToRgb = useCallback((hex) => {
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                return [r, g, b];
+            }, []);
+
+            // カラーパレット生成
+            const generatePalette = useMemo(() => {
+                const [h, s, l] = hexToHsl(baseColor);
+                
+                const colors = {
+                    monochromatic: [
+                        hslToHex(h, s, Math.max(10, l - 40)),
+                        hslToHex(h, s, Math.max(10, l - 20)),
+                        baseColor,
+                        hslToHex(h, s, Math.min(90, l + 20)),
+                        hslToHex(h, s, Math.min(90, l + 40))
+                    ],
+                    analogous: [
+                        hslToHex((h - 30 + 360) % 360, s, l),
+                        hslToHex((h - 15 + 360) % 360, s, l),
+                        baseColor,
+                        hslToHex((h + 15) % 360, s, l),
+                        hslToHex((h + 30) % 360, s, l)
+                    ],
+                    complementary: [
+                        hslToHex(h, s, Math.max(10, l - 20)),
+                        hslToHex(h, s, l),
+                        baseColor,
+                        hslToHex((h + 180) % 360, s, l),
+                        hslToHex((h + 180) % 360, s, Math.min(90, l + 20))
+                    ],
+                    triadic: [
+                        hslToHex(h, s, l),
+                        hslToHex((h + 120) % 360, s, l),
+                        hslToHex((h + 240) % 360, s, l),
+                        hslToHex(h, Math.max(10, s - 20), l),
+                        hslToHex(h, Math.min(90, s + 20), l)
+                    ]
+                };
+
+                return colors;
+            }, [baseColor, hexToHsl, hslToHex]);
+
+            // コピー処理
+            const copyToClipboard = async (color) => {
+                try {
+                    await navigator.clipboard.writeText(color);
+                    setCopyMessage(`${color} をコピーしました`);
+                    setTimeout(() => setCopyMessage(''), 2000);
+                } catch (error) {
+                    console.error('コピーに失敗しました:', error);
+                }
+            };
+
+            // カラー情報取得
+            const getColorInfo = (color) => {
+                const [r, g, b] = hexToRgb(color);
+                const [h, s, l] = hexToHsl(color);
+                return {
+                    hex: color.toUpperCase(),
+                    rgb: `rgb(${r}, ${g}, ${b})`,
+                    hsl: `hsl(${h}, ${s}%, ${l}%)`
+                };
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                    <div className="lg:flex lg:gap-6">
+                        {/* メインコンテンツ */}
+                        <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                            {/* ナビゲーション */}
+                            <div className="mb-4">
+                                <a
+                                    href="/"
+                                    onClick={() => {
+                                        sessionStorage.setItem('toolsScrollPosition', window.scrollY.toString());
+                                    }}
+                                    className="inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                                >
+                                    <svg
+                                        className="w-5 h-5 mr-2"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 19l-7-7 7-7"
+                                        />
+                                    </svg>
+                                    ツール一覧に戻る
+                                </a>
+                            </div>
+                            
+                            <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800 bg-white py-4 px-6 rounded-lg">
+                                <span className="mr-3">🎨</span>
+                                カラーパレットジェネレーター
+                            </h1>
+                            
+                            {/* カラーピッカーセクション */}
+                            <div className="mb-8">
+                                <div className="flex flex-col items-center space-y-6">
+                                    <div className="flex flex-col items-center space-y-4">
+                                        <label htmlFor="colorPicker" className="text-lg font-semibold text-gray-700">
+                                            ベースカラーを選択
+                                        </label>
+                                        <div className="flex items-center space-x-4">
+                                            <input
+                                                id="colorPicker"
+                                                type="color"
+                                                value={baseColor}
+                                                onChange={(e) => setBaseColor(e.target.value)}
+                                                className="w-16 h-16 rounded-lg border-2 border-gray-300 cursor-pointer"
+                                            />
+                                            <div className="text-center">
+                                                <div className="text-sm text-gray-600">選択中のカラー</div>
+                                                <div className="font-mono text-lg font-semibold">{baseColor.toUpperCase()}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* ベースカラー情報 */}
+                                    <div className="bg-gray-50 rounded-lg p-4 w-full max-w-md">
+                                        <h3 className="font-semibold mb-3 text-center">カラー情報</h3>
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">HEX:</span>
+                                                <span className="font-mono">{getColorInfo(baseColor).hex}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">RGB:</span>
+                                                <span className="font-mono">{getColorInfo(baseColor).rgb}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">HSL:</span>
+                                                <span className="font-mono">{getColorInfo(baseColor).hsl}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* コピーメッセージ */}
+                            {copyMessage && (
+                                <div className="mb-6 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-center">
+                                    {copyMessage}
+                                </div>
+                            )}
+
+                            {/* パレットセクション */}
+                            <div className="space-y-8">
+                                {/* モノクロマティック */}
+                                <div>
+                                    <h2 className="text-xl font-semibold mb-4 text-gray-800">モノクロマティック</h2>
+                                    <div className="grid grid-cols-5 gap-3">
+                                        {generatePalette.monochromatic.map((color, index) => (
+                                            <div key={index} className="group cursor-pointer" onClick={() => copyToClipboard(color)}>
+                                                <div
+                                                    className="w-full h-20 rounded-lg border-2 border-gray-200 group-hover:border-gray-400 transition-colors"
+                                                    style={{ backgroundColor: color }}
+                                                ></div>
+                                                <div className="text-center mt-2 text-xs font-mono text-gray-700">
+                                                    {color.toUpperCase()}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* 類似色 */}
+                                <div>
+                                    <h2 className="text-xl font-semibold mb-4 text-gray-800">類似色</h2>
+                                    <div className="grid grid-cols-5 gap-3">
+                                        {generatePalette.analogous.map((color, index) => (
+                                            <div key={index} className="group cursor-pointer" onClick={() => copyToClipboard(color)}>
+                                                <div
+                                                    className="w-full h-20 rounded-lg border-2 border-gray-200 group-hover:border-gray-400 transition-colors"
+                                                    style={{ backgroundColor: color }}
+                                                ></div>
+                                                <div className="text-center mt-2 text-xs font-mono text-gray-700">
+                                                    {color.toUpperCase()}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* 補色 */}
+                                <div>
+                                    <h2 className="text-xl font-semibold mb-4 text-gray-800">補色</h2>
+                                    <div className="grid grid-cols-5 gap-3">
+                                        {generatePalette.complementary.map((color, index) => (
+                                            <div key={index} className="group cursor-pointer" onClick={() => copyToClipboard(color)}>
+                                                <div
+                                                    className="w-full h-20 rounded-lg border-2 border-gray-200 group-hover:border-gray-400 transition-colors"
+                                                    style={{ backgroundColor: color }}
+                                                ></div>
+                                                <div className="text-center mt-2 text-xs font-mono text-gray-700">
+                                                    {color.toUpperCase()}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* 三色配色 */}
+                                <div>
+                                    <h2 className="text-xl font-semibold mb-4 text-gray-800">三色配色</h2>
+                                    <div className="grid grid-cols-5 gap-3">
+                                        {generatePalette.triadic.map((color, index) => (
+                                            <div key={index} className="group cursor-pointer" onClick={() => copyToClipboard(color)}>
+                                                <div
+                                                    className="w-full h-20 rounded-lg border-2 border-gray-200 group-hover:border-gray-400 transition-colors"
+                                                    style={{ backgroundColor: color }}
+                                                ></div>
+                                                <div className="text-center mt-2 text-xs font-mono text-gray-700">
+                                                    {color.toUpperCase()}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 使い方説明 */}
+                            <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <h3 className="font-semibold text-blue-800 mb-2">使い方</h3>
+                                <div className="text-sm text-blue-700 space-y-1">
+                                    <p>• 上のカラーピッカーでベースとなる色を選択してください</p>
+                                    <p>• 各パレットタイプに基づいて調和の取れた色が自動生成されます</p>
+                                    <p>• 色をクリックするとHEXコードがクリップボードにコピーされます</p>
+                                    <p>• デザインやWebサイト制作での配色選びにお役立てください</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* サイドバー (デスクトップ) */}
+                        <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                                    🔗 関連ツール
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                            </div>
+                            <div className="space-y-6">
+                                {/* Web・デザインツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('webNetwork')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🎨 Web・デザイン</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.webNetwork ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.webNetwork && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/qr/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📱 QRコード生成
+                                            </a>
+                                            <a href="/urlshortener/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 URL短縮ツール
+                                            </a>
+                                            <a href="/utm/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 UTMビルダー
+                                            </a>
+                                            <a href="/image-resizer/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🖼️ 画像リサイズ
+                                            </a>
+                                            <a href="/image-grayscale/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🎨 画像グレースケール
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* データ変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataConversion')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔄 データ変換</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.dataConversion ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataConversion && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                            <a href="/url/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 URLエンコード
+                                            </a>
+                                            <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 CSV ⇄ JSON
+                                            </a>
+                                            <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 YAML ⇄ JSON
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* テキスト操作ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('design')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>📝 テキスト操作</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.design ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.design && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/text-formatter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ✏️ テキスト整形
+                                            </a>
+                                            <a href="/moji_count/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📝 文字数カウント
+                                            </a>
+                                            <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔍 正規表現テスター
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 使い方のヒント */}
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                                    <ul className="text-sm text-blue-700 space-y-1">
+                                        <li>• Webサイトの配色設計に</li>
+                                        <li>• ブランドカラーの選定に</li>
+                                        <li>• UI/UXデザインの参考に</li>
+                                        <li>• グラフィック制作のアイデアに</li>
+                                    </ul>
+                                </div>
+
+                                {/* 技術ブログ */}
+                                <div className="bg-indigo-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                                    <a 
+                                        href="https://pokoroblog.com/" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                    >
+                                        <span className="mr-2">🌐</span>
+                                        Pokoro Blog
+                                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 関連ツール (モバイル) */}
+                    <div className="lg:hidden mt-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                            <p className="text-sm text-gray-600 mb-4">デザイン・Web開発の便利なツール</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a href="/qr/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    📱 QRコード生成
+                                </a>
+                                <a href="/urlshortener/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔗 URL短縮ツール
+                                </a>
+                                <a href="/image-resizer/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🖼️ 画像リサイズ
+                                </a>
+                                <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔐 Base64変換
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<ColorPaletteGenerator />, document.getElementById('root'));
+    </script>
+</body>
+</html>

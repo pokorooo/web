@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進数変換ツール（2/8/10/16進数） - Pokoro Tools</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="/related-tools-config.js"></script>
+    <script src="/RelatedTools.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        
+        const BaseConverter = () => {
+            const [inputValue, setInputValue] = useState('');
+            const [selectedBase, setSelectedBase] = useState(10);
+            const [error, setError] = useState('');
+            const [copyMessage, setCopyMessage] = useState('');
+            const [history, setHistory] = useState([]);
+            const [expandedCategories, setExpandedCategories] = useState({
+                calculatorTools: true,
+                dataConversion: false,
+                devTools: false
+            });
+            
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            // 基数定義
+            const bases = [
+                { value: 2, name: 'Binary', label: '2進数', regex: /^[01]+$/ },
+                { value: 8, name: 'Octal', label: '8進数', regex: /^[0-7]+$/ },
+                { value: 10, name: 'Decimal', label: '10進数', regex: /^[0-9]+$/ },
+                { value: 16, name: 'Hex', label: '16進数', regex: /^[0-9a-fA-F]+$/ }
+            ];
+
+            // 履歴をローカルストレージから読み込み
+            useEffect(() => {
+                const savedHistory = localStorage.getItem('baseConverterHistory');
+                if (savedHistory) {
+                    try {
+                        setHistory(JSON.parse(savedHistory));
+                    } catch (e) {
+                        setHistory([]);
+                    }
+                }
+            }, []);
+
+            // バリデーション
+            const validateInput = (value, base) => {
+                if (!value.trim()) return true; // 空文字は有効
+                const baseInfo = bases.find(b => b.value === base);
+                return baseInfo ? baseInfo.regex.test(value) : false;
+            };
+
+            // 変換処理
+            const convertedValues = useMemo(() => {
+                if (!inputValue.trim() || error) {
+                    return bases.map(base => ({
+                        ...base,
+                        convertedValue: ''
+                    }));
+                }
+
+                try {
+                    // 入力値を10進数に変換
+                    const decimalValue = parseInt(inputValue, selectedBase);
+                    
+                    if (isNaN(decimalValue) || decimalValue < 0) {
+                        return bases.map(base => ({
+                            ...base,
+                            convertedValue: ''
+                        }));
+                    }
+
+                    return bases.map(base => ({
+                        ...base,
+                        convertedValue: base.value === selectedBase ? inputValue : decimalValue.toString(base.value).toUpperCase()
+                    }));
+                } catch (err) {
+                    return bases.map(base => ({
+                        ...base,
+                        convertedValue: ''
+                    }));
+                }
+            }, [inputValue, selectedBase, error]);
+
+            // 入力変更処理
+            const handleInputChange = (e) => {
+                const value = e.target.value;
+                
+                if (!validateInput(value, selectedBase)) {
+                    setError('無効な入力です');
+                } else {
+                    setError('');
+                }
+                
+                setInputValue(value);
+            };
+
+            // 基数変更処理
+            const handleBaseChange = (e) => {
+                const newBase = parseInt(e.target.value);
+                setSelectedBase(newBase);
+                
+                // 現在の入力値が新しい基数で有効かチェック
+                if (inputValue && !validateInput(inputValue, newBase)) {
+                    setError('現在の入力値は選択した基数に対して無効です');
+                } else {
+                    setError('');
+                }
+            };
+
+            // コピー処理
+            const handleCopy = async (value, baseName) => {
+                if (!value) return;
+                
+                try {
+                    await navigator.clipboard.writeText(value);
+                    setCopyMessage(`${baseName}の値をコピーしました`);
+                    setTimeout(() => setCopyMessage(''), 1500);
+                } catch (err) {
+                    setCopyMessage('コピーに失敗しました');
+                    setTimeout(() => setCopyMessage(''), 1500);
+                }
+            };
+
+            // クリア処理
+            const handleClear = () => {
+                setInputValue('');
+                setError('');
+            };
+
+            // 履歴追加
+            const addToHistory = () => {
+                if (!inputValue.trim() || error) return;
+
+                const historyItem = {
+                    value: inputValue,
+                    base: selectedBase,
+                    timestamp: Date.now()
+                };
+
+                const newHistory = [historyItem, ...history.filter(item => 
+                    !(item.value === inputValue && item.base === selectedBase)
+                )].slice(0, 5);
+
+                setHistory(newHistory);
+                localStorage.setItem('baseConverterHistory', JSON.stringify(newHistory));
+            };
+
+            // 履歴から読み込み
+            const loadFromHistory = (item) => {
+                setInputValue(item.value);
+                setSelectedBase(item.base);
+                setError('');
+            };
+
+            // 入力値が変更されたら履歴に追加
+            useEffect(() => {
+                if (inputValue && !error) {
+                    const timer = setTimeout(addToHistory, 1000);
+                    return () => clearTimeout(timer);
+                }
+            }, [inputValue, selectedBase, error]);
+
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                    <div className="lg:flex lg:gap-6">
+                        {/* メインコンテンツ */}
+                        <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                            {React.createElement('div', {
+                                key: 'nav',
+                                className: "mb-4"
+                            }, 
+                                React.createElement('a', {
+                                    key: 'back',
+                                    href: '/',
+                                    onClick: () => {
+                                        sessionStorage.setItem('toolsScrollPosition', window.scrollY.toString());
+                                    },
+                                    className: "inline-flex items-center text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+                                }, [
+                                    React.createElement('svg', {
+                                        key: 'arrow',
+                                        className: "w-5 h-5 mr-2",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24"
+                                    },
+                                        React.createElement('path', {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: 2,
+                                            d: "M15 19l-7-7 7-7"
+                                        })
+                                    ),
+                                    'ツール一覧に戻る'
+                                ])
+                            )}
+                            
+                            <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800 bg-white py-4 px-6 rounded-lg">
+                                進数変換ツール（2/8/10/16進数）
+                            </h1>
+                            
+                            {/* 変換エリア */}
+                            <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    {/* 入力エリア */}
+                                    <div>
+                                        <h2 className="text-xl font-semibold text-gray-800 mb-6">入力</h2>
+
+                                        {/* 基数選択 */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">基数</label>
+                                            <select
+                                                value={selectedBase}
+                                                onChange={handleBaseChange}
+                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-gray-900"
+                                            >
+                                                {bases.map(base =>
+                                                    <option key={base.value} value={base.value}>
+                                                        {`${base.label} (${base.name})`}
+                                                    </option>
+                                                )}
+                                            </select>
+                                        </div>
+
+                                        {/* 数値入力 */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">数値</label>
+                                            <input
+                                                type="text"
+                                                value={inputValue}
+                                                onChange={handleInputChange}
+                                                placeholder={`${bases.find(b => b.value === selectedBase)?.label}で入力してください`}
+                                                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-lg bg-white text-gray-900 ${error ? 'border-red-500' : 'border-gray-300'}`}
+                                            />
+                                        </div>
+
+                                        {/* エラー表示 */}
+                                        {error && (
+                                            <div className="mb-4 text-red-600 text-sm">
+                                                {error}
+                                            </div>
+                                        )}
+
+                                        {/* クリアボタン */}
+                                        <button
+                                            onClick={handleClear}
+                                            className="w-full px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors duration-200"
+                                        >
+                                            クリア
+                                        </button>
+                                    </div>
+
+                                    {/* 結果エリア */}
+                                    <div>
+                                        <h2 className="text-xl font-semibold text-gray-800 mb-6">変換結果</h2>
+
+                                        <div className="overflow-hidden rounded-lg border border-gray-200">
+                                            {/* テーブルヘッダー */}
+                                            <div className="bg-gray-50 grid grid-cols-3 gap-4 p-4 text-sm font-medium text-gray-700">
+                                                <div>基数</div>
+                                                <div>値</div>
+                                                <div className="text-center">コピー</div>
+                                            </div>
+
+                                            {/* テーブル行 */}
+                                            {convertedValues.map((base, index) => (
+                                                <div
+                                                    key={base.value}
+                                                    className={`grid grid-cols-3 gap-4 p-4 border-t border-gray-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                                                >
+                                                    <div className="text-sm font-medium text-gray-700">
+                                                        {base.label}
+                                                    </div>
+                                                    <div className="font-mono text-sm text-gray-900 break-all">
+                                                        {base.convertedValue || (inputValue && !error ? '無効な入力' : '-')}
+                                                    </div>
+                                                    <div className="text-center">
+                                                        {base.convertedValue && (
+                                                            <button
+                                                                onClick={() => handleCopy(base.convertedValue, base.label)}
+                                                                className="p-2 text-gray-500 hover:text-indigo-600 transition-colors"
+                                                            >
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 履歴セクション */}
+                            {history.length > 0 && (
+                                <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                                    <h2 className="text-xl font-semibold text-gray-800 mb-4">履歴（最新5件）</h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {history.map((item, index) => (
+                                            <div
+                                                key={index}
+                                                onClick={() => loadFromHistory(item)}
+                                                className="p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-white transition-colors"
+                                            >
+                                                <div className="text-sm text-gray-600 mb-1">
+                                                    {bases.find(b => b.value === item.base)?.label}
+                                                </div>
+                                                <div className="font-mono text-lg text-gray-900 mb-2">
+                                                    {item.value}
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                    {new Date(item.timestamp).toLocaleString()}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* 使い方 */}
+                            <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+                                <h2 className="text-lg font-semibold mb-2 text-gray-800">使い方</h2>
+                                <ul className="text-sm text-gray-600 space-y-1">
+                                    <li>• 基数を選択して数値を入力すると、他の基数での値が表示されます</li>
+                                    <li>• 2進数、8進数、10進数、16進数に対応しています</li>
+                                    <li>• コピーボタンで変換結果をクリップボードにコピーできます</li>
+                                    <li>• 最新5件の変換履歴が自動保存されます</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        {/* サイドバー (デスクトップ) */}
+                        <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                                    🔗 関連ツール
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                            </div>
+                            <div className="space-y-6">
+                                {/* 計算・変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('calculatorTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔢 計算・変換</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.calculatorTools ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.calculatorTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/bitwise-calculator/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ⚡ ビット演算計算機
+                                            </a>
+                                            <a href="/bytebit/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                💾 バイト・ビット計算
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* データ変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataConversion')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔄 データ変換</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.dataConversion ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataConversion && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                            <a href="/url/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 URLエンコード
+                                            </a>
+                                            <a href="/hex-dump/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔍 Hex Dump Viewer
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 開発ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('devTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🛠️ 開発ツール</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.devTools ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.devTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔍 正規表現テスター
+                                            </a>
+                                            <a href="/json/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📋 JSONフォーマッター
+                                            </a>
+                                            <a href="/cron/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ⏰ Cron式パーサー
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 使い方のヒント */}
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                                    <ul className="text-sm text-blue-700 space-y-1">
+                                        <li>• プログラミングでの進数変換に</li>
+                                        <li>• 数学の計算チェックに</li>
+                                        <li>• コンピュータサイエンス学習に</li>
+                                        <li>• デバッグ時の値確認に</li>
+                                    </ul>
+                                </div>
+
+                                {/* 技術ブログ */}
+                                <div className="bg-indigo-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                                    <a 
+                                        href="https://pokoroblog.com/" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                    >
+                                        <span className="mr-2">🌐</span>
+                                        Pokoro Blog
+                                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 関連ツール (モバイル) */}
+                    <div className="lg:hidden mt-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                            <p className="text-sm text-gray-600 mb-4">計算・開発の便利なツール</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a href="/bitwise-calculator/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    ⚡ ビット演算計算機
+                                </a>
+                                <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔐 Base64変換
+                                </a>
+                                <a href="/hex-dump/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔍 Hex Dump Viewer
+                                </a>
+                                <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔍 正規表現テスター
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* トーストメッセージ */}
+                    {copyMessage && (
+                        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+                            {copyMessage}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(React.createElement(BaseConverter), document.getElementById('root'));
+    </script>
+</body>
+</html>

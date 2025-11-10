@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTF-8 ⇄ Shift_JIS 変換ツール - Pokoro Tools</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/encoding-japanese@2.0.0/encoding.min.js"></script>
+    <script src="/related-tools-config.js"></script>
+    <script src="/RelatedTools.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useRef, useEffect, useMemo } = React;
+        
+        const UTF8SJISConverter = () => {
+            const [mode, setMode] = useState('utf8-to-sjis'); // 'utf8-to-sjis' or 'sjis-to-utf8'
+            const [inputText, setInputText] = useState('');
+            const [outputText, setOutputText] = useState('');
+            const [error, setError] = useState('');
+            const [copyMessage, setCopyMessage] = useState('');
+            const [history, setHistory] = useState([]);
+            const [expandedCategories, setExpandedCategories] = useState({
+                dataConversion: true,
+                textTools: false,
+                devTools: false
+            });
+            const fileInputRef = useRef(null);
+            
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            const MAX_SIZE = 500 * 1024; // 500KB
+
+            // 履歴をローカルストレージから読み込み
+            useEffect(() => {
+                const savedHistory = localStorage.getItem('utf8SjisHistory');
+                if (savedHistory) {
+                    try {
+                        setHistory(JSON.parse(savedHistory));
+                    } catch (e) {
+                        setHistory([]);
+                    }
+                }
+            }, []);
+
+            // リアルタイム変換
+            const convertedText = useMemo(() => {
+                if (!inputText.trim()) {
+                    setError('');
+                    return '';
+                }
+
+                try {
+                    if (mode === 'utf8-to-sjis') {
+                        // UTF-8 → Shift_JIS
+                        const unicodeArray = [];
+                        for (let i = 0; i < inputText.length; i++) {
+                            unicodeArray.push(inputText.charCodeAt(i));
+                        }
+                        const sjisArray = Encoding.convert(unicodeArray, 'SJIS', 'UNICODE');
+                        const sjisString = Encoding.codeToString(sjisArray);
+                        setError('');
+                        return sjisString;
+                    } else {
+                        // Shift_JIS → UTF-8
+                        // 入力を文字列から文字コード配列に変換
+                        const sjisArray = [];
+                        for (let i = 0; i < inputText.length; i++) {
+                            sjisArray.push(inputText.charCodeAt(i));
+                        }
+                        const unicodeArray = Encoding.convert(sjisArray, 'UNICODE', 'SJIS');
+                        const utf8String = Encoding.codeToString(unicodeArray);
+                        setError('');
+                        return utf8String;
+                    }
+                } catch (err) {
+                    setError('変換に失敗しました: ' + err.message);
+                    return '';
+                }
+            }, [inputText, mode]);
+
+            // 変換結果の更新
+            useEffect(() => {
+                setOutputText(convertedText);
+            }, [convertedText]);
+
+            // ファイルアップロード処理
+            const handleFileUpload = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                if (file.size > MAX_SIZE) {
+                    setError(`ファイルサイズが大きすぎます（最大 ${MAX_SIZE / 1024}KB）`);
+                    return;
+                }
+
+                if (!file.name.toLowerCase().endsWith('.txt')) {
+                    setError('テキストファイル（.txt）を選択してください');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const arrayBuffer = event.target.result;
+                        const uint8Array = new Uint8Array(arrayBuffer);
+                        
+                        // エンコーディング検出と変換
+                        let detectedText = '';
+                        if (mode === 'utf8-to-sjis') {
+                            // UTF-8として読み込み
+                            detectedText = new TextDecoder('utf-8').decode(uint8Array);
+                        } else {
+                            // Shift_JISとして読み込み
+                            const sjisArray = Array.from(uint8Array);
+                            const unicodeArray = Encoding.convert(sjisArray, 'UNICODE', 'SJIS');
+                            detectedText = Encoding.codeToString(unicodeArray);
+                        }
+                        
+                        setInputText(detectedText);
+                        setError('');
+                    } catch (err) {
+                        setError('ファイルの読み込みに失敗しました: ' + err.message);
+                    }
+                };
+                reader.onerror = () => {
+                    setError('ファイルの読み込みに失敗しました');
+                };
+                reader.readAsArrayBuffer(file);
+            };
+
+            // コピー処理
+            const handleCopy = async () => {
+                if (!outputText) return;
+                
+                try {
+                    await navigator.clipboard.writeText(outputText);
+                    setCopyMessage('コピーしました');
+                    setTimeout(() => setCopyMessage(''), 1500);
+                } catch (err) {
+                    setCopyMessage('コピーに失敗しました');
+                    setTimeout(() => setCopyMessage(''), 1500);
+                }
+            };
+
+            // ダウンロード処理
+            const handleDownload = () => {
+                if (!outputText) return;
+
+                try {
+                    let blob;
+                    if (mode === 'utf8-to-sjis') {
+                        // Shift_JISでダウンロード
+                        const unicodeArray = [];
+                        for (let i = 0; i < outputText.length; i++) {
+                            unicodeArray.push(outputText.charCodeAt(i));
+                        }
+                        const sjisArray = Encoding.convert(unicodeArray, 'SJIS', 'UNICODE');
+                        const uint8Array = new Uint8Array(sjisArray);
+                        blob = new Blob([uint8Array], { type: 'text/plain;charset=shift_jis' });
+                    } else {
+                        // UTF-8でダウンロード
+                        blob = new Blob([outputText], { type: 'text/plain;charset=utf-8' });
+                    }
+
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'converted.txt';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                } catch (err) {
+                    setError('ダウンロードに失敗しました: ' + err.message);
+                }
+            };
+
+            // クリア処理
+            const handleClear = () => {
+                setInputText('');
+                setOutputText('');
+                setError('');
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            };
+
+            // モード変更時の処理
+            const handleModeChange = (newMode) => {
+                setMode(newMode);
+                setError('');
+                // 入力がある場合は自動的に再変換される（useMemoにより）
+            };
+
+            // 履歴に追加
+            const addToHistory = () => {
+                if (!inputText.trim()) return;
+
+                const historyItem = {
+                    text: inputText.length > 50 ? inputText.substring(0, 50) + '...' : inputText,
+                    fullText: inputText,
+                    mode: mode,
+                    timestamp: Date.now()
+                };
+
+                const newHistory = [
+                    historyItem,
+                    ...history.filter(item => item.fullText !== inputText)
+                ].slice(0, 3);
+
+                setHistory(newHistory);
+                localStorage.setItem('utf8SjisHistory', JSON.stringify(newHistory));
+            };
+
+            // 履歴から読み込み
+            const loadFromHistory = (item) => {
+                setInputText(item.fullText);
+                setMode(item.mode);
+            };
+
+            // 入力変更時に履歴追加
+            useEffect(() => {
+                if (inputText && !error) {
+                    const timer = setTimeout(addToHistory, 2000);
+                    return () => clearTimeout(timer);
+                }
+            }, [inputText, mode, error]);
+
+            return React.createElement('div', {
+                className: "max-w-7xl mx-auto p-4 md:p-6"
+            }, [
+                React.createElement('div', {
+                    key: 'main-layout',
+                    className: "lg:flex lg:gap-6"
+                }, [
+                    // メインコンテンツ
+                    React.createElement('div', {
+                        key: 'main-content',
+                        className: "lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8"
+                    }, [
+                        // ナビゲーション
+                        React.createElement('div', {
+                            key: 'nav',
+                            className: "mb-4"
+                        }, 
+                            React.createElement('a', {
+                                key: 'back',
+                                href: '/',
+                                className: "inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                            }, [
+                                React.createElement('svg', {
+                                    key: 'arrow',
+                                    className: "w-5 h-5 mr-2",
+                                    fill: "none",
+                                    stroke: "currentColor",
+                                    viewBox: "0 0 24 24"
+                                },
+                                    React.createElement('path', {
+                                        strokeLinecap: "round",
+                                        strokeLinejoin: "round",
+                                        strokeWidth: 2,
+                                        d: "M15 19l-7-7 7-7"
+                                    })
+                                ),
+                                'ツール一覧に戻る'
+                            ])
+                        ),
+
+                        // タイトル
+                        React.createElement('h1', {
+                            key: 'title',
+                            className: "text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800 bg-white py-4 px-6 rounded-lg"
+                        }, [
+                            React.createElement('span', {
+                                key: 'icon',
+                                className: "mr-3"
+                            }, '🔤'),
+                            'UTF-8 ⇄ Shift_JIS 変換ツール'
+                        ]),
+                        // モード切替
+                        React.createElement('div', {
+                            key: 'mode-toggle',
+                            className: "bg-gray-50 rounded-lg p-6 mb-8"
+                        }, [
+                            React.createElement('h2', {
+                                key: 'mode-title',
+                                className: "text-xl font-semibold text-gray-800 mb-4"
+                            }, '変換モード'),
+                            React.createElement('div', {
+                                key: 'mode-options',
+                                className: "flex flex-col sm:flex-row gap-4"
+                            }, [
+                                React.createElement('label', {
+                                    key: 'utf8-to-sjis',
+                                    className: "flex items-center space-x-3 cursor-pointer"
+                                }, [
+                                    React.createElement('input', {
+                                        key: 'radio1',
+                                        type: 'radio',
+                                        name: 'mode',
+                                        value: 'utf8-to-sjis',
+                                        checked: mode === 'utf8-to-sjis',
+                                        onChange: (e) => handleModeChange(e.target.value),
+                                        className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                                    }),
+                                    React.createElement('span', {
+                                        key: 'label1',
+                                        className: "text-sm font-medium text-gray-700"
+                                    }, 'UTF-8 → Shift_JIS')
+                                ]),
+                                React.createElement('label', {
+                                    key: 'sjis-to-utf8',
+                                    className: "flex items-center space-x-3 cursor-pointer"
+                                }, [
+                                    React.createElement('input', {
+                                        key: 'radio2',
+                                        type: 'radio',
+                                        name: 'mode',
+                                        value: 'sjis-to-utf8',
+                                        checked: mode === 'sjis-to-utf8',
+                                        onChange: (e) => handleModeChange(e.target.value),
+                                        className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                                    }),
+                                    React.createElement('span', {
+                                        key: 'label2',
+                                        className: "text-sm font-medium text-gray-700"
+                                    }, 'Shift_JIS → UTF-8')
+                                ])
+                            ])
+                        ]),
+
+                        // メインエリア
+                        React.createElement('div', {
+                            key: 'main-area',
+                            className: "grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8"
+                        }, [
+                            // 入力エリア
+                            React.createElement('div', {
+                                key: 'input-area',
+                                className: "bg-gray-50 rounded-lg p-6"
+                            }, [
+                                React.createElement('div', {
+                                    key: 'input-header',
+                                    className: "flex items-center justify-between mb-4"
+                                }, [
+                                    React.createElement('h2', {
+                                        key: 'input-title',
+                                        className: "text-xl font-semibold text-gray-800"
+                                    }, '入力'),
+                                    React.createElement('button', {
+                                        key: 'clear-btn',
+                                        onClick: handleClear,
+                                        className: "px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:border-gray-400 transition-colors"
+                                    }, 'クリア')
+                                ]),
+
+                                // ファイルアップロード
+                                React.createElement('div', {
+                                    key: 'file-upload',
+                                    className: "mb-4"
+                                }, [
+                                    React.createElement('label', {
+                                        key: 'file-label',
+                                        className: "block text-sm font-medium text-gray-700 mb-2"
+                                    }, 'ファイルアップロード'),
+                                    React.createElement('input', {
+                                        key: 'file-input',
+                                        ref: fileInputRef,
+                                        type: 'file',
+                                        accept: '.txt',
+                                        onChange: handleFileUpload,
+                                        className: "block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                    })
+                                ]),
+
+                                React.createElement('textarea', {
+                                    key: 'input-textarea',
+                                    value: inputText,
+                                    onChange: (e) => setInputText(e.target.value),
+                                    placeholder: "ここにテキストを入力してください",
+                                    className: "w-full h-64 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none bg-white text-gray-900",
+                                    spellCheck: false
+                                }),
+
+                                React.createElement('p', {
+                                    key: 'size-info',
+                                    className: "text-xs text-gray-500 mt-2"
+                                }, `最大 ${MAX_SIZE / 1024}KB`)
+                            ]),
+
+                            // 出力エリア
+                            React.createElement('div', {
+                                key: 'output-area',
+                                className: "bg-gray-50 rounded-lg p-6"
+                            }, [
+                                React.createElement('div', {
+                                    key: 'output-header',
+                                    className: "flex items-center justify-between mb-4"
+                                }, [
+                                    React.createElement('h2', {
+                                        key: 'output-title',
+                                        className: "text-xl font-semibold text-gray-800"
+                                    }, '結果'),
+                                    outputText && React.createElement('div', {
+                                        key: 'action-buttons',
+                                        className: "flex gap-2"
+                                    }, [
+                                        React.createElement('button', {
+                                            key: 'copy-btn',
+                                            onClick: handleCopy,
+                                            className: "px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                                        }, 'コピー'),
+                                        React.createElement('button', {
+                                            key: 'download-btn',
+                                            onClick: handleDownload,
+                                            className: "px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                        }, 'ダウンロード')
+                                    ])
+                                ]),
+
+                                React.createElement('textarea', {
+                                    key: 'output-textarea',
+                                    value: outputText,
+                                    readOnly: true,
+                                    placeholder: "変換結果がここに表示されます",
+                                    className: "w-full h-64 p-4 border border-gray-300 rounded-lg bg-white resize-none text-gray-900",
+                                    spellCheck: false
+                                })
+                            ])
+                        ]),
+
+                        // エラー表示
+                        error && React.createElement('div', {
+                            key: 'error',
+                            className: "mb-6 p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg"
+                        }, error),
+
+                        // 履歴セクション
+                        history.length > 0 && React.createElement('div', {
+                            key: 'history-section',
+                            className: "bg-gray-50 rounded-lg p-6 mb-8"
+                        }, [
+                            React.createElement('h2', {
+                                key: 'history-title',
+                                className: "text-xl font-semibold text-gray-800 mb-4"
+                            }, '履歴（最新3件）'),
+                            React.createElement('div', {
+                                key: 'history-grid',
+                                className: "grid grid-cols-1 sm:grid-cols-3 gap-4"
+                            },
+                                history.map((item, index) =>
+                                    React.createElement('div', {
+                                        key: index,
+                                        onClick: () => loadFromHistory(item),
+                                        className: "p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors bg-white"
+                                    }, [
+                                        React.createElement('div', {
+                                            key: 'hist-mode',
+                                            className: "text-xs text-indigo-600 font-medium mb-2"
+                                        }, item.mode === 'utf8-to-sjis' ? 'UTF-8 → Shift_JIS' : 'Shift_JIS → UTF-8'),
+                                        React.createElement('div', {
+                                            key: 'hist-text',
+                                            className: "text-sm text-gray-800 mb-2 break-all"
+                                        }, item.text),
+                                        React.createElement('div', {
+                                            key: 'hist-time',
+                                            className: "text-xs text-gray-500"
+                                        }, new Date(item.timestamp).toLocaleString())
+                                    ])
+                                )
+                            )
+                        ]),
+
+                        // 使い方説明
+                        React.createElement('div', {
+                            key: 'help-section',
+                            className: "bg-gray-50 rounded-lg p-6"
+                        }, [
+                            React.createElement('h2', {
+                                key: 'help-title',
+                                className: "text-xl font-semibold text-gray-800 mb-4"
+                            }, '使い方'),
+                            React.createElement('div', {
+                                key: 'help-content',
+                                className: "grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-600"
+                            }, [
+                                React.createElement('div', {
+                                    key: 'help-basic'
+                                }, [
+                                    React.createElement('h3', {
+                                        key: 'basic-title',
+                                        className: "font-medium text-gray-800 mb-2"
+                                    }, '基本操作'),
+                                    React.createElement('ul', {
+                                        key: 'basic-list',
+                                        className: "space-y-1"
+                                    }, [
+                                        React.createElement('li', { key: 'b1' }, '1. 変換モードを選択'),
+                                        React.createElement('li', { key: 'b2' }, '2. テキスト入力またはファイルアップロード'),
+                                        React.createElement('li', { key: 'b3' }, '3. 自動的に変換結果が表示'),
+                                        React.createElement('li', { key: 'b4' }, '4. コピーまたはダウンロードで取得')
+                                    ])
+                                ]),
+                                React.createElement('div', {
+                                    key: 'help-encoding'
+                                }, [
+                                    React.createElement('h3', {
+                                        key: 'encoding-title',
+                                        className: "font-medium text-gray-800 mb-2"
+                                    }, '文字エンコーディング'),
+                                    React.createElement('ul', {
+                                        key: 'encoding-list',
+                                        className: "space-y-1"
+                                    }, [
+                                        React.createElement('li', { key: 'e1' }, 'UTF-8: Unicode文字エンコーディング'),
+                                        React.createElement('li', { key: 'e2' }, 'Shift_JIS: 日本語文字エンコーディング'),
+                                        React.createElement('li', { key: 'e3' }, '対応ファイル: .txt（最大500KB）'),
+                                        React.createElement('li', { key: 'e4' }, '履歴: 最新3件を自動保存')
+                                    ])
+                                ])
+                            ])
+                        ])
+                    ]),
+
+                    // サイドバー (デスクトップ)
+                    React.createElement('div', {
+                        key: 'sidebar',
+                        className: "hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6"
+                    }, [
+                        React.createElement('div', {
+                            key: 'sidebar-header',
+                            className: "mb-6"
+                        }, [
+                            React.createElement('h2', {
+                                key: 'sidebar-title',
+                                className: "text-xl font-bold text-gray-800 flex items-center"
+                            }, [
+                                '🔗 関連ツール'
+                            ]),
+                            React.createElement('p', {
+                                key: 'sidebar-desc',
+                                className: "text-sm text-gray-600 mt-1"
+                            }, 'カテゴリ別に整理されたツール一覧')
+                        ]),
+                        React.createElement('div', {
+                            key: 'sidebar-content',
+                            className: "space-y-6"
+                        }, [
+                            // データ変換ツール
+                            React.createElement('div', {
+                                key: 'data-conversion',
+                                className: "bg-gray-50 rounded-lg p-4"
+                            }, [
+                                React.createElement('button', {
+                                    key: 'data-toggle',
+                                    onClick: () => toggleCategory('dataConversion'),
+                                    className: "w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'data-label'
+                                    }, '🔄 データ変換'),
+                                    React.createElement('svg', {
+                                        key: 'data-arrow',
+                                        className: `w-5 h-5 transform transition-transform ${expandedCategories.dataConversion ? 'rotate-180' : ''}`,
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24"
+                                    },
+                                        React.createElement('path', {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: 2,
+                                            d: "M19 9l-7 7-7-7"
+                                        })
+                                    )
+                                ]),
+                                expandedCategories.dataConversion && React.createElement('div', {
+                                    key: 'data-links',
+                                    className: "mt-3 space-y-2"
+                                }, [
+                                    React.createElement('a', {
+                                        key: 'base64',
+                                        href: "/base64/",
+                                        className: "block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors"
+                                    }, '🔐 Base64変換'),
+                                    React.createElement('a', {
+                                        key: 'url-encode',
+                                        href: "/url/",
+                                        className: "block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors"
+                                    }, '🔗 URLエンコード'),
+                                    React.createElement('a', {
+                                        key: 'csvjson',
+                                        href: "/csvjson/",
+                                        className: "block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors"
+                                    }, '🔄 CSV ⇄ JSON'),
+                                    React.createElement('a', {
+                                        key: 'yamljson',
+                                        href: "/yamljson/",
+                                        className: "block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors"
+                                    }, '🔄 YAML ⇄ JSON')
+                                ])
+                            ]),
+
+                            // テキスト操作ツール
+                            React.createElement('div', {
+                                key: 'text-tools',
+                                className: "bg-gray-50 rounded-lg p-4"
+                            }, [
+                                React.createElement('button', {
+                                    key: 'text-toggle',
+                                    onClick: () => toggleCategory('textTools'),
+                                    className: "w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'text-label'
+                                    }, '📝 テキスト操作'),
+                                    React.createElement('svg', {
+                                        key: 'text-arrow',
+                                        className: `w-5 h-5 transform transition-transform ${expandedCategories.textTools ? 'rotate-180' : ''}`,
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24"
+                                    },
+                                        React.createElement('path', {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: 2,
+                                            d: "M19 9l-7 7-7-7"
+                                        })
+                                    )
+                                ]),
+                                expandedCategories.textTools && React.createElement('div', {
+                                    key: 'text-links',
+                                    className: "mt-3 space-y-2"
+                                }, [
+                                    React.createElement('a', {
+                                        key: 'text-formatter',
+                                        href: "/text-formatter/",
+                                        className: "block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors"
+                                    }, '✏️ テキスト整形'),
+                                    React.createElement('a', {
+                                        key: 'moji-count',
+                                        href: "/moji_count/",
+                                        className: "block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors"
+                                    }, '📝 文字数カウント'),
+                                    React.createElement('a', {
+                                        key: 'textdiff',
+                                        href: "/textdiff/",
+                                        className: "block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors"
+                                    }, '📄 テキスト比較')
+                                ])
+                            ]),
+
+                            // 開発ツール
+                            React.createElement('div', {
+                                key: 'dev-tools',
+                                className: "bg-gray-50 rounded-lg p-4"
+                            }, [
+                                React.createElement('button', {
+                                    key: 'dev-toggle',
+                                    onClick: () => toggleCategory('devTools'),
+                                    className: "w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'dev-label'
+                                    }, '🛠️ 開発ツール'),
+                                    React.createElement('svg', {
+                                        key: 'dev-arrow',
+                                        className: `w-5 h-5 transform transition-transform ${expandedCategories.devTools ? 'rotate-180' : ''}`,
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24"
+                                    },
+                                        React.createElement('path', {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: 2,
+                                            d: "M19 9l-7 7-7-7"
+                                        })
+                                    )
+                                ]),
+                                expandedCategories.devTools && React.createElement('div', {
+                                    key: 'dev-links',
+                                    className: "mt-3 space-y-2"
+                                }, [
+                                    React.createElement('a', {
+                                        key: 'regex',
+                                        href: "/regex/",
+                                        className: "block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors"
+                                    }, '🔍 正規表現テスター'),
+                                    React.createElement('a', {
+                                        key: 'json',
+                                        href: "/json/",
+                                        className: "block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors"
+                                    }, '📋 JSONフォーマッター'),
+                                    React.createElement('a', {
+                                        key: 'hex-dump',
+                                        href: "/hex-dump/",
+                                        className: "block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors"
+                                    }, '🔍 Hex Dump Viewer')
+                                ])
+                            ]),
+
+                            // 使い方のヒント
+                            React.createElement('div', {
+                                key: 'usage-hints',
+                                className: "bg-blue-50 rounded-lg p-4"
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'hints-title',
+                                    className: "text-lg font-semibold text-blue-800 mb-3"
+                                }, '💡 使い方のヒント'),
+                                React.createElement('ul', {
+                                    key: 'hints-list',
+                                    className: "text-sm text-blue-700 space-y-1"
+                                }, [
+                                    React.createElement('li', { key: 'hint1' }, '• 古いシステムとの文字コード変換に'),
+                                    React.createElement('li', { key: 'hint2' }, '• レガシーファイルの現代化に'),
+                                    React.createElement('li', { key: 'hint3' }, '• 日本語文字化け対応に'),
+                                    React.createElement('li', { key: 'hint4' }, '• 異なるシステム間のデータ移行に')
+                                ])
+                            ]),
+
+                            // 技術ブログ
+                            React.createElement('div', {
+                                key: 'tech-blog',
+                                className: "bg-indigo-50 rounded-lg p-4"
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'blog-title',
+                                    className: "text-lg font-semibold text-indigo-800 mb-3"
+                                }, '📝 技術ブログ'),
+                                React.createElement('a', {
+                                    key: 'blog-link',
+                                    href: "https://pokoroblog.com/",
+                                    target: "_blank",
+                                    rel: "noopener noreferrer",
+                                    className: "flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                }, [
+                                    React.createElement('span', {
+                                        key: 'blog-icon',
+                                        className: "mr-2"
+                                    }, '🌐'),
+                                    'Pokoro Blog',
+                                    React.createElement('svg', {
+                                        key: 'external-link',
+                                        className: "w-3 h-3 ml-1",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24"
+                                    },
+                                        React.createElement('path', {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: 2,
+                                            d: "M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                        })
+                                    )
+                                ]),
+                                React.createElement('p', {
+                                    key: 'blog-desc',
+                                    className: "text-xs text-indigo-600 mt-2"
+                                }, 'プログラミング・技術情報を発信中')
+                            ])
+                        ])
+                    ])
+                ]),
+
+                // 関連ツール (モバイル)
+                React.createElement('div', {
+                    key: 'mobile-tools',
+                    className: "lg:hidden mt-6"
+                }, 
+                    React.createElement('div', {
+                        key: 'mobile-tools-container',
+                        className: "bg-white rounded-lg shadow-lg p-6"
+                    }, [
+                        React.createElement('h3', {
+                            key: 'mobile-title',
+                            className: "text-lg font-semibold text-gray-800 mb-3"
+                        }, '🔗 関連ツール'),
+                        React.createElement('p', {
+                            key: 'mobile-desc',
+                            className: "text-sm text-gray-600 mb-4"
+                        }, 'データ変換・文字コード変換の便利なツール'),
+                        React.createElement('div', {
+                            key: 'mobile-grid',
+                            className: "grid grid-cols-1 sm:grid-cols-2 gap-3"
+                        }, [
+                            React.createElement('a', {
+                                key: 'mobile-base64',
+                                href: "/base64/",
+                                className: "block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors"
+                            }, '🔐 Base64変換'),
+                            React.createElement('a', {
+                                key: 'mobile-url',
+                                href: "/url/",
+                                className: "block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors"
+                            }, '🔗 URLエンコード'),
+                            React.createElement('a', {
+                                key: 'mobile-text-formatter',
+                                href: "/text-formatter/",
+                                className: "block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors"
+                            }, '✏️ テキスト整形'),
+                            React.createElement('a', {
+                                key: 'mobile-hex-dump',
+                                href: "/hex-dump/",
+                                className: "block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors"
+                            }, '🔍 Hex Dump Viewer')
+                        ])
+                    ])
+                ),
+
+                // トーストメッセージ
+                copyMessage && React.createElement('div', {
+                    key: 'toast',
+                    className: "fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50"
+                }, copyMessage)
+            ]);
+        };
+
+        ReactDOM.render(React.createElement(UTF8SJISConverter), document.getElementById('root'));
+    </script>
+</body>
+</html>

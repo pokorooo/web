@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL エンコード・デコード ツール</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        function URLTool() {
+            const [activeTab, setActiveTab] = useState('encode');
+            const [input, setInput] = useState('');
+            const [output, setOutput] = useState('');
+            const [copyText, setCopyText] = useState('コピー');
+            const [expandedCategories, setExpandedCategories] = useState({
+                dataConversion: true,
+                textTools: false,
+                webNetwork: false
+            });
+            
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+            
+            const handleEncode = (text) => {
+                try {
+                    return encodeURIComponent(text);
+                } catch (e) {
+                    return text;
+                }
+            };
+            
+            const handleDecode = (text) => {
+                try {
+                    return decodeURIComponent(text);
+                } catch (e) {
+                    return text;
+                }
+            };
+            
+            const processText = (text) => {
+                if (activeTab === 'encode') {
+                    return handleEncode(text);
+                } else {
+                    return handleDecode(text);
+                }
+            };
+            
+            const handleInputChange = (value) => {
+                setInput(value);
+                setOutput(processText(value));
+            };
+            
+            const handleCopy = async () => {
+                if (!output) return;
+                
+                try {
+                    await navigator.clipboard.writeText(output);
+                    setCopyText('コピー済み');
+                    setTimeout(() => setCopyText('コピー'), 1500);
+                } catch (err) {
+                    console.error('コピーに失敗しました:', err);
+                }
+            };
+            
+            const handleClear = () => {
+                setInput('');
+                setOutput('');
+            };
+            
+            const handleTabChange = (tab) => {
+                setActiveTab(tab);
+                setOutput(processText(input));
+            };
+            
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                    <div className="lg:flex lg:gap-6">
+                        {/* Main Content */}
+                        <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                            {/* ナビゲーション */}
+                            <div className="mb-4">
+                                <a
+                                    href="/"
+                                    onClick={() => {
+                                        sessionStorage.setItem('toolsScrollPosition', window.scrollY.toString());
+                                    }}
+                                    className="inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                                >
+                                    <svg
+                                        className="w-5 h-5 mr-2"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 19l-7-7 7-7"
+                                        />
+                                    </svg>
+                                    ツール一覧に戻る
+                                </a>
+                            </div>
+                            
+                            <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800 bg-white py-4 px-6 rounded-lg">
+                                URL エンコード・デコード ツール
+                            </h1>
+                            
+                            {/* タブ */}
+                            <div className="flex mb-6 border-b border-gray-200">
+                                <button
+                                    onClick={() => handleTabChange('encode')}
+                                    className={`flex-1 px-4 py-2 text-center font-medium transition-colors ${
+                                        activeTab === 'encode'
+                                            ? 'text-blue-600 border-b-2 border-blue-600'
+                                            : 'text-gray-600 hover:text-gray-800'
+                                    }`}
+                                >
+                                    エンコード
+                                </button>
+                                <button
+                                    onClick={() => handleTabChange('decode')}
+                                    className={`flex-1 px-4 py-2 text-center font-medium transition-colors ${
+                                        activeTab === 'decode'
+                                            ? 'text-blue-600 border-b-2 border-blue-600'
+                                            : 'text-gray-600 hover:text-gray-800'
+                                    }`}
+                                >
+                                    デコード
+                                </button>
+                            </div>
+                            
+                            {/* 入力エリア */}
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-semibold text-gray-700">
+                                        {activeTab === 'encode' ? '元のテキスト' : 'エンコードされたテキスト'}
+                                    </h2>
+                                    <button
+                                        onClick={handleClear}
+                                        className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:border-gray-400 transition-colors"
+                                    >
+                                        クリア
+                                    </button>
+                                </div>
+                                <textarea
+                                    value={input}
+                                    onChange={(e) => handleInputChange(e.target.value)}
+                                    placeholder={
+                                        activeTab === 'encode' 
+                                            ? 'エンコードしたいテキストを入力してください...'
+                                            : 'デコードしたいURLエンコードされたテキストを入力してください...'
+                                    }
+                                    className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                    spellCheck={false}
+                                />
+                            </div>
+                            
+                            {/* 出力エリア */}
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-semibold text-gray-700">
+                                        {activeTab === 'encode' ? 'エンコード結果' : 'デコード結果'}
+                                    </h2>
+                                    {output && (
+                                        <button
+                                            onClick={handleCopy}
+                                            className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                                        >
+                                            {copyText}
+                                        </button>
+                                    )}
+                                </div>
+                                <textarea
+                                    value={output}
+                                    readOnly
+                                    placeholder={
+                                        activeTab === 'encode' 
+                                            ? 'エンコード結果がここに表示されます...'
+                                            : 'デコード結果がここに表示されます...'
+                                    }
+                                    className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 resize-none"
+                                    spellCheck={false}
+                                />
+                            </div>
+                            
+                            {/* 説明 */}
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <h3 className="font-semibold text-blue-800 mb-2">使い方</h3>
+                                <div className="text-sm text-blue-700 space-y-1">
+                                    {activeTab === 'encode' ? (
+                                        <>
+                                            <p>• 日本語や特殊文字を含むテキストをURL安全な形式に変換します</p>
+                                            <p>• スペースは %20 に、日本語は %E3%81%82 のような形式になります</p>
+                                            <p>• URLのクエリパラメータやフォームデータの送信に使用されます</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p>• URLエンコードされたテキストを元の読める形式に戻します</p>
+                                            <p>• %20 はスペースに、%E3%81%82 は「あ」のような文字に変換されます</p>
+                                            <p>• URLから取得したパラメータの値を読みやすくするのに便利です</p>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* サイドバー (デスクトップ) */}
+                        <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                                    🔗 関連ツール
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                            </div>
+                            <div className="space-y-6">
+                                {/* データ変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataConversion')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔄 データ変換</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.dataConversion ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataConversion && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                            <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 CSV ⇄ JSON
+                                            </a>
+                                            <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 YAML ⇄ JSON
+                                            </a>
+                                            <a href="/utf8-sjis/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔤 UTF-8 ⇄ Shift_JIS
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Web・ネットワーク関連 */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('webNetwork')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🌐 Web・ネットワーク</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.webNetwork ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.webNetwork && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/qr/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📱 QRコード生成
+                                            </a>
+                                            <a href="/urlshortener/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 URL短縮ツール
+                                            </a>
+                                            <a href="/utm/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 UTMビルダー
+                                            </a>
+                                            <a href="/color/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🎨 カラーパレット
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* テキスト操作ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('textTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>📝 テキスト操作</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.textTools ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.textTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/text-formatter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ✏️ テキスト整形
+                                            </a>
+                                            <a href="/moji_count/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📝 文字数カウント
+                                            </a>
+                                            <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔍 正規表現テスター
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 使い方のヒント */}
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                                    <ul className="text-sm text-blue-700 space-y-1">
+                                        <li>• URL パラメータの処理に</li>
+                                        <li>• フォームデータの送信前処理に</li>
+                                        <li>• API 連携時の文字列変換に</li>
+                                        <li>• Web 開発のデバッグ作業に</li>
+                                    </ul>
+                                </div>
+
+                                {/* 技術ブログ */}
+                                <div className="bg-indigo-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                                    <a 
+                                        href="https://pokoroblog.com/" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                    >
+                                        <span className="mr-2">🌐</span>
+                                        Pokoro Blog
+                                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 関連ツール (モバイル) */}
+                    <div className="lg:hidden mt-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                            <p className="text-sm text-gray-600 mb-4">データ変換・Web開発の便利なツール</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔐 Base64変換
+                                </a>
+                                <a href="/qr/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    📱 QRコード生成
+                                </a>
+                                <a href="/urlshortener/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔗 URL短縮ツール
+                                </a>
+                                <a href="/color/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🎨 カラーパレット
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        ReactDOM.render(<URLTool />, document.getElementById('root'));
+    </script>
+</body>
+</html>

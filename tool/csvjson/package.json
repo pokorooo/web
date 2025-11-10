@@ -1,0 +1,13 @@
+{
+  "name": "csv-json-converter-tool",
+  "version": "1.0.0",
+  "description": "CSV ⇄ JSON 変換ツール（CSV ⇄ JSON Converter）",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["csv", "json", "converter", "data-conversion", "tool"],
+  "author": "",
+  "license": "MIT"
+}

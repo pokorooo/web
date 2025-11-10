@@ -1,0 +1,13 @@
+{
+  "name": "password-generator-tool",
+  "version": "1.0.0",
+  "description": "ランダムパスワード生成ツール（Random Password Generator）",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["password", "generator", "random", "crypto", "security", "tool"],
+  "author": "",
+  "license": "MIT"
+}

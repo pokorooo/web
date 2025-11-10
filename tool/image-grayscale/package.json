@@ -1,0 +1,13 @@
+{
+  "name": "image-grayscale-tool",
+  "version": "1.0.0",
+  "description": "画像白黒変換ツール - Image Grayscale Conversion Tool",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["image", "grayscale", "black-white", "conversion", "tool"],
+  "author": "",
+  "license": "MIT"
+}

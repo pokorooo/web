@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テキスト整形ツール - Pokoro Tools</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        const TextFormatter = () => {
+            const [inputText, setInputText] = useState('');
+            const [outputText, setOutputText] = useState('');
+            const [options, setOptions] = useState({
+                trim: false,
+                lineToComma: false,
+                removeDuplicates: false
+            });
+            const [copyMessage, setCopyMessage] = useState('');
+            const [expandedCategories, setExpandedCategories] = useState({
+                textTools: true,
+                dataConversion: false,
+                dataFormatting: false
+            });
+
+            // オプション変更処理
+            const handleOptionChange = (optionName) => {
+                setOptions(prev => ({
+                    ...prev,
+                    [optionName]: !prev[optionName]
+                }));
+            };
+
+            // テキスト整形処理
+            const formatText = () => {
+                if (!inputText.trim()) {
+                    setOutputText('');
+                    return;
+                }
+
+                let lines = inputText.split('\n');
+
+                // 前後の空白を除去
+                if (options.trim) {
+                    lines = lines.map(line => line.trim());
+                }
+
+                // 重複行を削除
+                if (options.removeDuplicates) {
+                    lines = [...new Set(lines)];
+                }
+
+                // 改行をカンマに変換
+                if (options.lineToComma) {
+                    // 空行を除去してからカンマ区切りにする
+                    const nonEmptyLines = lines.filter(line => line !== '');
+                    setOutputText(nonEmptyLines.join(', '));
+                } else {
+                    setOutputText(lines.join('\n'));
+                }
+            };
+
+            // コピー処理
+            const handleCopy = async () => {
+                if (!outputText) return;
+                
+                try {
+                    await navigator.clipboard.writeText(outputText);
+                    setCopyMessage('コピーしました！');
+                    setTimeout(() => setCopyMessage(''), 2000);
+                } catch (err) {
+                    setCopyMessage('コピーに失敗しました');
+                    setTimeout(() => setCopyMessage(''), 2000);
+                }
+            };
+
+            // クリア処理
+            const handleClear = () => {
+                setInputText('');
+                setOutputText('');
+            };
+
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                    <div className="lg:flex lg:gap-6">
+                        {/* メインコンテンツ */}
+                        <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                            <div className="mb-4">
+                                <a
+                                    href="/"
+                                    onClick={() => {
+                                        sessionStorage.setItem('toolsScrollPosition', window.scrollY.toString());
+                                    }}
+                                    className="inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                                >
+                                    <svg
+                                        className="w-5 h-5 mr-2"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 19l-7-7 7-7"
+                                        />
+                                    </svg>
+                                    ツール一覧に戻る
+                                </a>
+                            </div>
+                        
+                        <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800 bg-white py-4 px-6 rounded-lg">
+                            テキスト整形ツール
+                        </h1>
+                        {/* 入力セクション */}
+                        <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-semibold text-gray-700">入力</h2>
+                                <button
+                                    onClick={handleClear}
+                                    className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:border-gray-400 transition-colors"
+                                >
+                                    クリア
+                                </button>
+                            </div>
+                            <textarea
+                                value={inputText}
+                                onChange={(e) => setInputText(e.target.value)}
+                                placeholder="ここにテキストを入力してください"
+                                className="w-full h-40 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                                spellCheck={false}
+                            />
+                        </div>
+
+                        {/* オプションセクション */}
+                        <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                            <h2 className="text-xl font-semibold text-gray-700 mb-4">整形オプション</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                                {/* 前後の空白を除去 */}
+                                <label className="flex items-center space-x-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={options.trim}
+                                        onChange={() => handleOptionChange('trim')}
+                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                    />
+                                    <span className="text-sm text-gray-700">前後の空白を除去</span>
+                                </label>
+
+                                {/* 改行をカンマに変換 */}
+                                <label className="flex items-center space-x-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={options.lineToComma}
+                                        onChange={() => handleOptionChange('lineToComma')}
+                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                    />
+                                    <span className="text-sm text-gray-700">改行をカンマに変換</span>
+                                </label>
+
+                                {/* 重複行を削除 */}
+                                <label className="flex items-center space-x-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={options.removeDuplicates}
+                                        onChange={() => handleOptionChange('removeDuplicates')}
+                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                    />
+                                    <span className="text-sm text-gray-700">重複行を削除</span>
+                                </label>
+                            </div>
+
+                            {/* 整形ボタン */}
+                            <div className="text-center">
+                                <button
+                                    onClick={formatText}
+                                    className="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+                                >
+                                    整形する
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 出力セクション */}
+                        <div className="bg-gray-50 rounded-lg p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-semibold text-gray-700">整形結果</h2>
+                                {outputText && (
+                                    <button
+                                        onClick={handleCopy}
+                                        className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors duration-200"
+                                    >
+                                        コピー
+                                    </button>
+                                )}
+                            </div>
+                            <textarea
+                                value={outputText}
+                                readOnly
+                                placeholder="整形されたテキストがここに表示されます"
+                                className="w-full h-40 p-4 border border-gray-300 rounded-lg bg-gray-50 resize-none"
+                                spellCheck={false}
+                            />
+
+                            {/* コピーメッセージ */}
+                            {copyMessage && (
+                                <div className="mt-4 text-center text-green-600 text-sm font-medium">
+                                    {copyMessage}
+                                </div>
+                            )}
+                        </div>
+                        </div>
+                        
+                        {/* サイドバー (デスクトップ) */}
+                        <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                                    🔗 関連ツール
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                            </div>
+                            <div className="space-y-6">
+                                {/* テキスト操作ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('textTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>📝 テキスト操作</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.textTools ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.textTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/moji_count/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📝 文字数カウント
+                                            </a>
+                                            <a href="/textdiff/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📄 テキスト比較
+                                            </a>
+                                            <a href="/line-tab-converter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 改行・タブ変換
+                                            </a>
+                                            <a href="/kutouten/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📝 句読点変換
+                                            </a>
+                                            <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔍 正規表現テスター
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* データ変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataConversion')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔄 データ変換</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.dataConversion ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataConversion && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 CSV ⇄ JSON
+                                            </a>
+                                            <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 YAML ⇄ JSON
+                                            </a>
+                                            <a href="/tsvcsv/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 TSV ⇄ CSV
+                                            </a>
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                            <a href="/utf8-sjis/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔤 UTF-8 ⇄ Shift_JIS
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* データ整形・閲覧ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataFormatting')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>📋 データ整形・閲覧</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.dataFormatting ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataFormatting && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/json/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📋 JSONフォーマッター
+                                            </a>
+                                            <a href="/csv-dedup/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 CSV重複削除
+                                            </a>
+                                            <a href="/markdown-to-html/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📝 Markdown → HTML
+                                            </a>
+                                            <a href="/markdown-pdf/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📄 Markdown → PDF
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 使い方のヒント */}
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                                    <ul className="text-sm text-blue-700 space-y-1">
+                                        <li>• 空白除去でデータをクリーン化</li>
+                                        <li>• 重複行削除でリストを整理</li>
+                                        <li>• カンマ変換でCSV形式に</li>
+                                        <li>• 複数オプションの組み合わせ可能</li>
+                                    </ul>
+                                </div>
+
+                                {/* 外部リンク */}
+                                <div className="bg-indigo-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                                    <a 
+                                        href="https://pokoroblog.com/" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                    >
+                                        <span className="mr-2">🌐</span>
+                                        Pokoro Blog
+                                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 関連ツール (モバイル) */}
+                    <div className="lg:hidden mt-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                            <p className="text-sm text-gray-600 mb-4">テキスト関連の便利なツール</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a href="/moji_count/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    📝 文字数カウント
+                                </a>
+                                <a href="/textdiff/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    📄 テキスト比較
+                                </a>
+                                <a href="/line-tab-converter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔄 改行・タブ変換
+                                </a>
+                                <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔍 正規表現テスター
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(React.createElement(TextFormatter), document.getElementById('root'));
+    </script>
+</body>
+</html>

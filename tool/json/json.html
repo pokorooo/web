@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSONフォーマッター（整形・検証）</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+
+        const JsonFormatter = () => {
+          const [inputJson, setInputJson] = useState('');
+          const [formattedJson, setFormattedJson] = useState('');
+          const [error, setError] = useState('');
+          const [copyMessage, setCopyMessage] = useState('');
+          const [expandedCategories, setExpandedCategories] = useState({
+            devTools: true,
+            dataConversion: false,
+            textTools: false
+          });
+          
+          // カテゴリの開閉切り替え
+          const toggleCategory = (category) => {
+            setExpandedCategories(prev => ({
+              ...prev,
+              [category]: !prev[category]
+            }));
+          };
+
+          const handleInputChange = (e) => {
+            const value = e.target.value;
+            setInputJson(value);
+            
+            if (value.trim() === '') {
+              setFormattedJson('');
+              setError('');
+              return;
+            }
+
+            try {
+              const parsed = JSON.parse(value);
+              const formatted = JSON.stringify(parsed, null, 2);
+              setFormattedJson(formatted);
+              setError('');
+            } catch (err) {
+              setError('無効なJSON形式です: ' + err.message);
+              setFormattedJson('');
+            }
+          };
+
+          const handleCopy = async () => {
+            if (formattedJson) {
+              try {
+                await navigator.clipboard.writeText(formattedJson);
+                setCopyMessage('コピーしました');
+                setTimeout(() => setCopyMessage(''), 2000);
+              } catch (err) {
+                setCopyMessage('コピーに失敗しました');
+                setTimeout(() => setCopyMessage(''), 2000);
+              }
+            }
+          };
+
+          return (
+            <div className="max-w-7xl mx-auto p-4 md:p-6">
+              <div className="lg:flex lg:gap-6">
+                {/* メインコンテンツ */}
+                <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                  {/* ナビゲーション */}
+                  <div className="mb-4">
+                    <a 
+                      href="/"
+                      className="inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                    >
+                      <svg 
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                      ツール一覧に戻る
+                    </a>
+                  </div>
+                  
+                  {/* タイトル */}
+                  <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800">
+                    JSONフォーマッター（整形・検証）
+                  </h1>
+                  
+                  {/* メインエリア */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold text-gray-700">入力</h2>
+                      </div>
+                      <textarea
+                        value={inputJson}
+                        onChange={handleInputChange}
+                        placeholder="ここにJSONを入力してください"
+                        className="w-full h-96 p-4 border border-gray-300 rounded-lg font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold text-gray-700">整形結果</h2>
+                        {formattedJson && (
+                          <div className="flex items-center gap-2">
+                            {copyMessage && (
+                              <span className="text-green-600 text-sm">{copyMessage}</span>
+                            )}
+                            <button
+                              onClick={handleCopy}
+                              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-200 text-sm"
+                            >
+                              コピー
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {error ? (
+                        <div className="w-full h-96 p-4 bg-red-50 border border-red-300 rounded-lg">
+                          <p className="text-red-600 font-mono text-sm">{error}</p>
+                        </div>
+                      ) : (
+                        <textarea
+                          value={formattedJson}
+                          readOnly
+                          placeholder="整形されたJSONがここに表示されます"
+                          className="w-full h-96 p-4 border border-gray-300 rounded-lg font-mono text-sm resize-none bg-gray-50 focus:outline-none"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* サイドバー (デスクトップ) */}
+                <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                  <div className="mb-6">
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                      🔗 関連ツール
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                  </div>
+                  <div className="space-y-6">
+                    {/* 開発ツール */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <button 
+                        onClick={() => toggleCategory('devTools')}
+                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                      >
+                        <span>🛠️ 開発ツール</span>
+                        <svg 
+                          className={`w-5 h-5 transform transition-transform ${expandedCategories.devTools ? 'rotate-180' : ''}`}
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {expandedCategories.devTools && (
+                        <div className="mt-3 space-y-2">
+                          <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                            🔍 正規表現テスター
+                          </a>
+                          <a href="/cron/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                            ⏰ Cron式パーサー
+                          </a>
+                          <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                            🔐 Base64変換
+                          </a>
+                          <a href="/hex-dump/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                            🔍 Hex Dump Viewer
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* データ変換ツール */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <button 
+                        onClick={() => toggleCategory('dataConversion')}
+                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                      >
+                        <span>🔄 データ変換</span>
+                        <svg 
+                          className={`w-5 h-5 transform transition-transform ${expandedCategories.dataConversion ? 'rotate-180' : ''}`}
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {expandedCategories.dataConversion && (
+                        <div className="mt-3 space-y-2">
+                          <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                            🔄 CSV ⇄ JSON
+                          </a>
+                          <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                            🔄 YAML ⇄ JSON
+                          </a>
+                          <a href="/url/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                            🔗 URLエンコード
+                          </a>
+                          <a href="/utf8-sjis/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                            🔤 UTF-8 ⇄ Shift_JIS
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* テキスト操作ツール */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <button 
+                        onClick={() => toggleCategory('textTools')}
+                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                      >
+                        <span>📝 テキスト操作</span>
+                        <svg 
+                          className={`w-5 h-5 transform transition-transform ${expandedCategories.textTools ? 'rotate-180' : ''}`}
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {expandedCategories.textTools && (
+                        <div className="mt-3 space-y-2">
+                          <a href="/text-formatter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                            ✏️ テキスト整形
+                          </a>
+                          <a href="/moji_count/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                            📝 文字数カウント
+                          </a>
+                          <a href="/textdiff/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                            📄 テキスト比較
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 使い方のヒント */}
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        <li>• API レスポンスの整形・検証に</li>
+                        <li>• 設定ファイルの構文チェックに</li>
+                        <li>• データ構造の可視化に</li>
+                        <li>• デバッグ時のデータ確認に</li>
+                      </ul>
+                    </div>
+
+                    {/* 技術ブログ */}
+                    <div className="bg-indigo-50 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                      <a 
+                        href="https://pokoroblog.com/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                      >
+                        <span className="mr-2">🌐</span>
+                        Pokoro Blog
+                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                      <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 関連ツール (モバイル) */}
+              <div className="lg:hidden mt-6">
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                  <p className="text-sm text-gray-600 mb-4">開発・データ処理の便利なツール</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                      🔍 正規表現テスター
+                    </a>
+                    <a href="/cron/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                      ⏰ Cron式パーサー
+                    </a>
+                    <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                      🔄 CSV ⇄ JSON
+                    </a>
+                    <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                      🔐 Base64変換
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<JsonFormatter />, document.getElementById('root'));
+    </script>
+</body>
+</html>

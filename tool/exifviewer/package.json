@@ -1,0 +1,13 @@
+{
+  "name": "image-exif-viewer-tool",
+  "version": "1.0.0",
+  "description": "画像 EXIF ビューア（Image EXIF Viewer）",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["exif", "image", "metadata", "viewer", "photography", "tool"],
+  "author": "",
+  "license": "MIT"
+}

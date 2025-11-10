@@ -1,0 +1,25 @@
+{
+  "name": "pokoro-tools",
+  "version": "1.0.0",
+  "description": "Pokoro Tools - 便利なWebツール集",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "babel . --out-dir build --extensions \".js,.jsx\" --source-maps inline --copy-files --ignore \"node_modules\""
+  },
+  "keywords": [
+    "tools",
+    "utilities",
+    "web",
+    "pokoro"
+  ],
+  "author": "Pokoro",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.28.0",
+    "@babel/preset-react": "^7.27.1"
+  },
+  "dependencies": {
+    "20": "^3.1.9"
+  }
+}

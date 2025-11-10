@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "name": "game-portal",
+  "builds": [
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.css",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/homepage.html"
+    },
+    {
+      "src": "/quiz",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/sudoku",
+      "dest": "/sudoku.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
+}

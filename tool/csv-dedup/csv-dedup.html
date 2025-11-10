@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV 行の重複削除＋件数表示ツール - Pokoro Tools</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useRef } = React;
+        
+        const CSVDeduplicator = () => {
+            const [inputText, setInputText] = useState('');
+            const [outputText, setOutputText] = useState('');
+            const [hasHeader, setHasHeader] = useState(true);
+            const [ignoreCase, setIgnoreCase] = useState(false);
+            const [trimWhitespace, setTrimWhitespace] = useState(true);
+            const [statistics, setStatistics] = useState({ totalRows: 0, uniqueRows: 0, duplicatesRemoved: 0 });
+            const [error, setError] = useState('');
+            const [copyMessage, setCopyMessage] = useState('');
+            const [expandedCategories, setExpandedCategories] = useState({
+                dataConversion: true,
+                textTools: false,
+                devTools: false
+            });
+            const fileInputRef = useRef(null);
+            
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            const handleFileUpload = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    setInputText(event.target.result);
+                };
+                reader.readAsText(file);
+            };
+
+            const processCSV = () => {
+                if (!inputText.trim()) {
+                    setOutputText('');
+                    setStatistics({ totalRows: 0, uniqueRows: 0, duplicatesRemoved: 0 });
+                    setError('');
+                    return;
+                }
+
+                try {
+                    const lines = inputText.trim().split('\n');
+                    const totalRows = lines.length;
+                    
+                    let processedLines = lines;
+                    if (trimWhitespace) {
+                        processedLines = processedLines.map(line => line.trim());
+                    }
+                    
+                    if (ignoreCase) {
+                        processedLines = processedLines.map(line => line.toLowerCase());
+                    }
+                    
+                    const uniqueLines = [...new Set(processedLines)];
+                    const uniqueRows = uniqueLines.length;
+                    const duplicatesRemoved = totalRows - uniqueRows;
+                    
+                    // 元の形式で出力（大文字小文字やトリムの処理前）
+                    let outputLines = [];
+                    const seen = new Set();
+                    
+                    for (let i = 0; i < lines.length; i++) {
+                        let processedLine = lines[i];
+                        if (trimWhitespace) processedLine = processedLine.trim();
+                        if (ignoreCase) processedLine = processedLine.toLowerCase();
+                        
+                        if (!seen.has(processedLine)) {
+                            seen.add(processedLine);
+                            outputLines.push(lines[i]);
+                        }
+                    }
+                    
+                    setOutputText(outputLines.join('\n'));
+                    setStatistics({ totalRows, uniqueRows, duplicatesRemoved });
+                    setError('');
+                } catch (err) {
+                    setError('処理中にエラーが発生しました: ' + err.message);
+                    setOutputText('');
+                    setStatistics({ totalRows: 0, uniqueRows: 0, duplicatesRemoved: 0 });
+                }
+            };
+
+            const copyToClipboard = async () => {
+                if (!outputText) return;
+                
+                try {
+                    await navigator.clipboard.writeText(outputText);
+                    setCopyMessage('コピーしました！');
+                    setTimeout(() => setCopyMessage(''), 2000);
+                } catch (err) {
+                    setCopyMessage('コピーに失敗しました');
+                    setTimeout(() => setCopyMessage(''), 2000);
+                }
+            };
+
+            const downloadCSV = () => {
+                if (!outputText) return;
+                
+                const blob = new Blob([outputText], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'deduplicated.csv';
+                link.click();
+                URL.revokeObjectURL(link.href);
+            };
+
+            // 入力が変更されたら自動で処理
+            React.useEffect(() => {
+                processCSV();
+            }, [inputText, hasHeader, ignoreCase, trimWhitespace]);
+
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                    <div className="lg:flex lg:gap-6">
+                        {/* メインコンテンツ */}
+                        <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                            {/* ナビゲーション */}
+                            <div className="mb-4">
+                                <a 
+                                    href="/"
+                                    className="inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                                >
+                                    <svg 
+                                        className="w-5 h-5 mr-2"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path 
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 19l-7-7 7-7"
+                                        />
+                                    </svg>
+                                    ツール一覧に戻る
+                                </a>
+                            </div>
+
+                            {/* タイトル */}
+                            <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800">
+                                CSV 行の重複削除＋件数表示ツール
+                            </h1>
+
+                            {/* 入力セクション */}
+                            <div className="mb-8">
+                                <h2 className="text-xl font-semibold text-gray-700 mb-4">CSV入力</h2>
+                                
+                                <div className="mb-4">
+                                    <label className="block">
+                                        <div className="flex items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                <svg className="w-8 h-8 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                </svg>
+                                                <p className="mb-2 text-sm text-gray-500">
+                                                    <span className="font-semibold">クリックしてCSVファイルをアップロード</span>
+                                                </p>
+                                                <p className="text-xs text-gray-500">CSV files only</p>
+                                            </div>
+                                        </div>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept=".csv"
+                                            onChange={handleFileUpload}
+                                            className="hidden"
+                                        />
+                                    </label>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        または直接テキストを入力
+                                    </label>
+                                    <textarea
+                                        value={inputText}
+                                        onChange={(e) => setInputText(e.target.value)}
+                                        placeholder="CSVデータをここに貼り付けてください..."
+                                        className="w-full h-40 p-4 border border-gray-300 rounded-lg font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+
+                                {/* オプション */}
+                                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-3">処理オプション</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <label className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={hasHeader}
+                                                onChange={(e) => setHasHeader(e.target.checked)}
+                                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                            />
+                                            <span className="ml-2 text-sm text-gray-700">ヘッダー行あり</span>
+                                        </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={ignoreCase}
+                                                onChange={(e) => setIgnoreCase(e.target.checked)}
+                                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                            />
+                                            <span className="ml-2 text-sm text-gray-700">大文字小文字を区別しない</span>
+                                        </label>
+                                        <label className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={trimWhitespace}
+                                                onChange={(e) => setTrimWhitespace(e.target.checked)}
+                                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                            />
+                                            <span className="ml-2 text-sm text-gray-700">前後の空白を削除</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {error && (
+                                    <div className="mb-4 p-4 bg-red-50 border border-red-300 text-red-700 rounded-lg">
+                                        {error}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 結果セクション */}
+                            <div className="mb-8">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-semibold text-gray-700">結果</h2>
+                                    {outputText && (
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={copyToClipboard}
+                                                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+                                            >
+                                                コピー
+                                            </button>
+                                            <button
+                                                onClick={downloadCSV}
+                                                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm"
+                                            >
+                                                ダウンロード
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mb-4">
+                                    <textarea
+                                        value={outputText}
+                                        readOnly
+                                        placeholder="処理結果がここに表示されます..."
+                                        className="w-full h-40 p-4 border border-gray-300 rounded-lg font-mono text-sm resize-none bg-gray-50"
+                                    />
+                                </div>
+
+                                {/* 統計情報 */}
+                                {(statistics.totalRows > 0 || statistics.uniqueRows > 0) && (
+                                    <div className="bg-blue-50 rounded-lg p-4">
+                                        <h3 className="text-lg font-semibold text-blue-800 mb-3">処理結果</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="bg-white rounded-lg p-4">
+                                                <div className="text-2xl font-bold text-gray-900">{statistics.totalRows}</div>
+                                                <div className="text-sm text-gray-600">総行数</div>
+                                            </div>
+                                            <div className="bg-white rounded-lg p-4">
+                                                <div className="text-2xl font-bold text-green-600">{statistics.uniqueRows}</div>
+                                                <div className="text-sm text-gray-600">重複削除後</div>
+                                            </div>
+                                            <div className="bg-white rounded-lg p-4">
+                                                <div className="text-2xl font-bold text-red-600">{statistics.duplicatesRemoved}</div>
+                                                <div className="text-sm text-gray-600">削除された重複</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* サイドバー (デスクトップ) */}
+                        <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                                    🔗 関連ツール
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                            </div>
+                            <div className="space-y-6">
+                                {/* データ変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataConversion')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔄 データ変換</span>
+                                        <svg 
+                                            className={"w-5 h-5 transform transition-transform " + (expandedCategories.dataConversion ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataConversion && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/tsvcsv/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 TSV ⇄ CSV変換
+                                            </a>
+                                            <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 CSV ⇄ JSON
+                                            </a>
+                                            <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 YAML ⇄ JSON
+                                            </a>
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* テキスト操作ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('textTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>📝 テキスト操作</span>
+                                        <svg 
+                                            className={"w-5 h-5 transform transition-transform " + (expandedCategories.textTools ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.textTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/text-formatter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ✏️ テキスト整形
+                                            </a>
+                                            <a href="/moji_count/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📝 文字数カウント
+                                            </a>
+                                            <a href="/textdiff/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📄 テキスト比較
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 開発ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('devTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🛠️ 開発ツール</span>
+                                        <svg 
+                                            className={"w-5 h-5 transform transition-transform " + (expandedCategories.devTools ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.devTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/json/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📋 JSONフォーマッター
+                                            </a>
+                                            <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔍 正規表現テスター
+                                            </a>
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 使い方のヒント */}
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                                    <ul className="text-sm text-blue-700 space-y-1">
+                                        <li>• 大量のCSVデータから重複行を削除</li>
+                                        <li>• データ分析前のクリーニングに</li>
+                                        <li>• データベースインポート前の処理に</li>
+                                        <li>• Excel・Googleスプレッドシートの補完に</li>
+                                    </ul>
+                                </div>
+
+                                {/* 技術ブログ */}
+                                <div className="bg-indigo-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                                    <a 
+                                        href="https://pokoroblog.com/" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                    >
+                                        <span className="mr-2">🌐</span>
+                                        Pokoro Blog
+                                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 関連ツール (モバイル) */}
+                    <div className="lg:hidden mt-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                            <p className="text-sm text-gray-600 mb-4">データ処理・変換の便利なツール</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a href="/tsvcsv/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔄 TSV ⇄ CSV変換
+                                </a>
+                                <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔄 CSV ⇄ JSON
+                                </a>
+                                <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔄 YAML ⇄ JSON
+                                </a>
+                                <a href="/json/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    📋 JSONフォーマッター
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* コピー成功メッセージ */}
+                    {copyMessage && (
+                        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+                            {copyMessage}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<CSVDeduplicator />, document.getElementById('root'));
+    </script>
+</body>
+</html>

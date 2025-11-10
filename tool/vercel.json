@@ -1,0 +1,128 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/base-converter/(.*)",
+      "destination": "/base-converter/base-converter.html"
+    },
+    {
+      "source": "/base64/(.*)",
+      "destination": "/base64/base64.html"
+    },
+    {
+      "source": "/bitwise-calculator/(.*)",
+      "destination": "/bitwise-calculator/bitwise-calculator.html"
+    },
+    {
+      "source": "/bytebit/(.*)",
+      "destination": "/bytebit/index.html"
+    },
+    {
+      "source": "/color/(.*)",
+      "destination": "/color/index.html"
+    },
+    {
+      "source": "/cron/(.*)",
+      "destination": "/cron/index.html"
+    },
+    {
+      "source": "/csv-dedup/(.*)",
+      "destination": "/csv-dedup/csv-dedup.html"
+    },
+    {
+      "source": "/csvjson/(.*)",
+      "destination": "/csvjson/index.html"
+    },
+    {
+      "source": "/exifviewer/(.*)",
+      "destination": "/exifviewer/index.html"
+    },
+    {
+      "source": "/hex-dump/(.*)",
+      "destination": "/hex-dump/hex-dump.html"
+    },
+    {
+      "source": "/image-grayscale/(.*)",
+      "destination": "/image-grayscale/index.html"
+    },
+    {
+      "source": "/image-resizer/(.*)",
+      "destination": "/image-resizer/index.html"
+    },
+    {
+      "source": "/json/(.*)",
+      "destination": "/json/json.html"
+    },
+    {
+      "source": "/kutouten/(.*)",
+      "destination": "/kutouten/index.html"
+    },
+    {
+      "source": "/line-tab-converter/(.*)",
+      "destination": "/line-tab-converter/line-tab-converter.html"
+    },
+    {
+      "source": "/markdown-pdf/(.*)",
+      "destination": "/markdown-pdf/markdown-pdf.html"
+    },
+    {
+      "source": "/markdown-to-html/(.*)",
+      "destination": "/markdown-to-html/markdown-to-html.html"
+    },
+    {
+      "source": "/moji_count/(.*)",
+      "destination": "/moji_count/index.html"
+    },
+    {
+      "source": "/password/(.*)",
+      "destination": "/password/index.html"
+    },
+    {
+      "source": "/passwordchecker/(.*)",
+      "destination": "/passwordchecker/index.html"
+    },
+    {
+      "source": "/qr/(.*)",
+      "destination": "/qr/index.html"
+    },
+    {
+      "source": "/regex/(.*)",
+      "destination": "/regex/index.html"
+    },
+    {
+      "source": "/text-formatter/(.*)",
+      "destination": "/text-formatter/index.html"
+    },
+    {
+      "source": "/textdiff/(.*)",
+      "destination": "/textdiff/index.html"
+    },
+    {
+      "source": "/tsvcsv/(.*)",
+      "destination": "/tsvcsv/index.html"
+    },
+    {
+      "source": "/url/(.*)",
+      "destination": "/url/index.html"
+    },
+    {
+      "source": "/urlshortener/(.*)",
+      "destination": "/urlshortener/index.html"
+    },
+    {
+      "source": "/utf8-sjis/(.*)",
+      "destination": "/utf8-sjis/utf8-sjis.html"
+    },
+    {
+      "source": "/utm/(.*)",
+      "destination": "/utm/index.html"
+    },
+    {
+      "source": "/yamljson/(.*)",
+      "destination": "/yamljson/index.html"
+    }
+  ]
+}

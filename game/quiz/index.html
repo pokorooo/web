@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>インタラクティブクイズゲーム</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- ホーム画面 -->
+        <div id="home-screen" class="screen">
+            <div class="logo">
+                <h1>📚 クイズゲーム</h1>
+                <p>あなたの知識をテストしよう！</p>
+                <a href="homepage.html" style="display: inline-block; margin-top: 10px; padding: 8px 16px; background: linear-gradient(135deg, #e5e7eb, #d1d5db); color: #4b5563; text-decoration: none; border-radius: 8px; font-size: 0.9rem;">🏠 ホームに戻る</a>
+            </div>
+            <div class="difficulty-selection">
+                <h3>難易度を選択してください：</h3>
+                <button class="difficulty-btn" data-difficulty="easy">簡単 (基礎レベル)</button>
+                <button class="difficulty-btn" data-difficulty="normal">普通 (一般レベル)</button>
+                <button class="difficulty-btn" data-difficulty="hard">難しい (上級レベル)</button>
+            </div>
+            <div class="game-info">
+                <p>🎯 10問のクイズに挑戦</p>
+                <p>⏱️ 各問題30秒の制限時間</p>
+                <p>📊 難易度に応じた問題レベル</p>
+            </div>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div id="game-screen" class="screen hidden">
+            <div class="game-header">
+                <div class="game-stats">
+                    <span id="question-counter">問題 1/10</span>
+                    <span id="score-display">スコア: 0</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress" id="progress"></div>
+                </div>
+            </div>
+
+            <div class="timer-container">
+                <div class="timer" id="timer">30</div>
+                <div class="timer-bar">
+                    <div class="timer-progress" id="timer-progress"></div>
+                </div>
+            </div>
+
+            <div class="question-container">
+                <div class="category" id="category"></div>
+                <h2 id="question-text"></h2>
+                <div class="answers" id="answers">
+                    <button class="answer-btn" data-answer="A">A. </button>
+                    <button class="answer-btn" data-answer="B">B. </button>
+                    <button class="answer-btn" data-answer="C">C. </button>
+                    <button class="answer-btn" data-answer="D">D. </button>
+                </div>
+                <div class="game-controls">
+                    <button id="skip-btn" class="skip-btn">スキップ</button>
+                    <button id="next-btn" class="next-btn hidden">次の問題</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結果画面 -->
+        <div id="result-screen" class="screen hidden">
+            <div class="result-container">
+                <h2>🎉 ゲーム終了！</h2>
+                <div class="final-score">
+                    <div class="score-circle">
+                        <span id="final-score">0</span>
+                        <span class="score-label">点</span>
+                    </div>
+                </div>
+                <div class="result-stats">
+                    <div class="stat">
+                        <span class="stat-value" id="correct-count">0</span>
+                        <span class="stat-label">正解数</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="accuracy-rate">0%</span>
+                        <span class="stat-label">正解率</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="difficulty-label">-</span>
+                        <span class="stat-label">難易度</span>
+                    </div>
+                </div>
+                <div class="wrong-answers" id="wrong-answers"></div>
+                <div class="result-actions">
+                    <button id="play-again-btn">もう一度プレイ</button>
+                    <button id="share-btn">結果をシェア</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="questions.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

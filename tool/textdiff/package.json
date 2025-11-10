@@ -1,0 +1,13 @@
+{
+  "name": "text-diff-tool",
+  "version": "1.0.0",
+  "description": "テキスト差分ツール（Diff Viewer）",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["text", "diff", "comparison", "tool"],
+  "author": "",
+  "license": "MIT"
+}

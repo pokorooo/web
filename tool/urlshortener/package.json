@@ -1,0 +1,13 @@
+{
+  "name": "url-shortener-tool",
+  "version": "1.0.0",
+  "description": "URL短縮ツール",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["url", "shortener", "tool", "qrcode"],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokoro Tools - 便利なWebツール集</title>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        .navbar {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+        }
+        .nav-logo h2 {
+            color: #777;
+            font-weight: 700;
+            font-size: 1.4rem;
+            background: linear-gradient(45deg, #999, #777);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+        }
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+        .nav-link {
+            text-decoration: none;
+            color: #777;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+        .nav-link:hover {
+            color: #999;
+            background: rgba(0, 0, 0, 0.03);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 2px;
+            left: 50%;
+            background: linear-gradient(45deg, #999, #bbb);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        .nav-link:hover::after {
+            width: 80%;
+        }
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+        }
+        .bar {
+            width: 25px;
+            height: 3px;
+            background: linear-gradient(45deg, #999, #bbb);
+            margin: 3px 0;
+            transition: 0.3s;
+            border-radius: 2px;
+        }
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+            .nav-menu {
+                position: fixed;
+                left: -100%;
+                top: 70px;
+                flex-direction: column;
+                background-color: white;
+                width: 100%;
+                text-align: center;
+                transition: 0.3s;
+                box-shadow: 0 10px 27px rgba(0, 0, 0, 0.05);
+                padding: 20px 0;
+            }
+            .nav-menu.active {
+                left: 0;
+            }
+            .nav-menu li {
+                margin: 10px 0;
+            }
+        }
+        body {
+            padding-top: 70px;
+            font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', 'Meiryo', 'メイリオ', sans-serif;
+            line-height: 1.6;
+            color: #555;
+            scroll-behavior: smooth;
+            background: linear-gradient(135deg, #fefefe 0%, #f8f9fa 50%, #f1f3f4 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(220, 220, 220, 0.3) 0%, transparent 50%);
+            z-index: -2;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { 
+                background: 
+                    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 80%, rgba(220, 220, 220, 0.3) 0%, transparent 50%);
+            }
+            25% { 
+                background: 
+                    radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 30% 70%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 90% 40%, rgba(220, 220, 220, 0.3) 0%, transparent 50%);
+            }
+            50% { 
+                background: 
+                    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 20% 30%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 60% 20%, rgba(220, 220, 220, 0.3) 0%, transparent 50%);
+            }
+            75% { 
+                background: 
+                    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 90% 80%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 10% 60%, rgba(220, 220, 220, 0.3) 0%, transparent 50%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/icon.png" alt="pokoro" style="width: 32px; height: 32px; margin-right: 10px;">
+                <h2><a href="/" style="text-decoration: none; color: inherit;">pokoro</a></h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/tool/index.html" class="nav-link">ツール</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/game/homepage.html" class="nav-link">ゲーム</a>
+                </li>
+                <li class="nav-item">
+                    <a href="https://pokoroblog.com/" class="nav-link" target="_blank">ブログ</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const ToolsPage = () => {
+          // ページ読み込み時に保存されたスクロール位置に復元
+          useEffect(() => {
+            const savedScrollPosition = sessionStorage.getItem('toolsScrollPosition');
+            if (savedScrollPosition) {
+              // 少し遅延させてDOMが完全に読み込まれてからスクロール
+              setTimeout(() => {
+                window.scrollTo(0, parseInt(savedScrollPosition));
+                sessionStorage.removeItem('toolsScrollPosition');
+              }, 100);
+            }
+          }, []);
+
+          const tools = [
+            {
+              id: 1,
+              name: '文字数カウント',
+              description: 'テキストの文字数・行数・単語数をリアルタイムでカウント',
+              link: './moji_count/',
+              icon: '📝',
+              category: 'テキスト操作'
+            },
+            {
+              id: 2,
+              name: 'URLエンコード',
+              description: 'URLエンコード・デコードを簡単に変換',
+              link: './url/',
+              icon: '🔗',
+              category: 'Web・ネットワーク関連'
+            },
+            {
+              id: 3,
+              name: 'QRコード生成',
+              description: 'テキストやURLから高品質なQRコードを生成',
+              link: './qr/',
+              icon: '📱',
+              category: '画像関連'
+            },
+            {
+              id: 4,
+              name: 'Base64変換',
+              description: 'テキストをBase64エンコード・デコード',
+              link: './base64/',
+              icon: '🔐',
+              category: 'データ変換・エンコード'
+            },
+            {
+              id: 5,
+              name: 'JSONフォーマッター',
+              description: 'JSONデータを整形・圧縮・検証',
+              link: './json/',
+              icon: '📋',
+              category: 'データ整形・閲覧'
+            },
+            {
+              id: 6,
+              name: 'カラーパレット',
+              description: 'カラーコードの変換と色見本の生成',
+              link: './color/',
+              icon: '🎨',
+              category: 'Web・ネットワーク関連'
+            },
+            {
+              id: 7,
+              name: 'テキスト整形',
+              description: 'テキストの空白除去・重複削除・カンマ変換',
+              link: './text-formatter/',
+              icon: '✏️',
+              category: 'テキスト操作'
+            },
+            {
+              id: 8,
+              name: '改行コード＆タブ変換',
+              description: '改行コードとタブ/スペースの相互変換',
+              link: './line-tab-converter/line-tab-converter.html',
+              icon: '🔄',
+              category: 'テキスト操作'
+            },
+            {
+              id: 9,
+              name: 'Markdown → HTML変換',
+              description: 'MarkdownをHTMLコードに変換',
+              link: './markdown-to-html/markdown-to-html.html',
+              icon: '📝',
+              category: 'データ変換・エンコード'
+            },
+            {
+              id: 10,
+              name: 'URL短縮ツール',
+              description: 'TinyURL・is.gdを使って長いURLを短縮し、QRコードも生成',
+              link: './urlshortener/',
+              icon: '🔗',
+              category: 'Web・ネットワーク関連'
+            },
+            {
+              id: 11,
+              name: 'テキスト差分ツール',
+              description: '2つのテキストの差分を比較し、追加・削除・変更行をハイライト表示',
+              link: './textdiff/',
+              icon: '📄',
+              category: 'テキスト操作'
+            },
+            {
+              id: 12,
+              name: 'バイト⇄ビット換算ツール',
+              description: 'データサイズの単位を簡単に変換（bit, byte, KB, KiB, MB, MiB, GB, GiB, TB, TiB）',
+              link: './bytebit/',
+              icon: '💾',
+              category: '計算'
+            },
+            {
+              id: 13,
+              name: 'CSV ⇄ JSON 変換ツール',
+              description: 'CSVとJSONを相互変換、ファイルアップロード・ダウンロード対応',
+              link: './csvjson/',
+              icon: '🔄',
+              category: 'データ変換・エンコード'
+            },
+            {
+              id: 14,
+              name: 'Cron式パーサー & 次回実行表示ツール',
+              description: 'Cron式を解析して自然言語で説明、次回実行日時を表示',
+              link: './cron/',
+              icon: '⏰',
+              category: 'Web・ネットワーク関連'
+            },
+            {
+              id: 15,
+              name: 'YAML ⇄ JSON 変換ツール',
+              description: 'YAMLとJSONを相互変換、ファイルアップロード・ダウンロード対応',
+              link: './yamljson/',
+              icon: '🔄',
+              category: 'データ変換・エンコード'
+            },
+            {
+              id: 16,
+              name: 'URL クエリ抽出 & UTM ビルダー',
+              description: 'URLのクエリパラメータを解析し、UTMパラメータを簡単に追加',
+              link: './utm/',
+              icon: '🔗',
+              category: 'Web・ネットワーク関連'
+            },
+            {
+              id: 17,
+              name: '正規表現テスター',
+              description: '正規表現パターンをテストし、マッチした箇所をハイライト表示',
+              link: './regex/',
+              icon: '🔍',
+              category: 'テキスト操作'
+            },
+            {
+              id: 18,
+              name: 'TSV ⇄ CSV 変換ツール',
+              description: 'TSVとCSVを相互変換、ファイルアップロード・ダウンロード対応',
+              link: './tsvcsv/',
+              icon: '🔄',
+              category: 'データ変換・エンコード'
+            },
+            {
+              id: 19,
+              name: '句読点一括置換ツール',
+              description: '日本語の句読点（、。）と欧文の句読点（,.）を一括で変換',
+              link: './kutouten/',
+              icon: '📝',
+              category: 'テキスト操作'
+            },
+            {
+              id: 20,
+              name: 'ランダムパスワード生成ツール',
+              description: '暗号学的に安全な乱数を使用してパスワードを生成',
+              link: './password/',
+              icon: '🔐',
+              category: 'セキュリティ'
+            },
+            {
+              id: 21,
+              name: 'パスワード強度チェッカー',
+              description: 'パスワードの強度を詳細に分析し、セキュリティレベルを評価',
+              link: './passwordchecker/',
+              icon: '🛡️',
+              category: 'セキュリティ'
+            },
+            {
+              id: 22,
+              name: '画像 EXIF ビューア',
+              description: '画像ファイルからEXIFメタデータを抽出し、詳細情報を表示',
+              link: './exifviewer/',
+              icon: '📷',
+              category: '画像関連'
+            },
+            {
+              id: 23,
+              name: '進数変換ツール（2/8/10/16進数）',
+              description: '2進数・8進数・10進数・16進数の相互変換とリアルタイム計算',
+              link: './base-converter/base-converter.html',
+              icon: '🔢',
+              category: 'データ変換・エンコード'
+            },
+            {
+              id: 24,
+              name: 'Hex Dump Viewer（バイナリダンプ表示）',
+              description: 'バイナリファイルを16進ダンプ形式で表示・解析',
+              link: './hex-dump/hex-dump.html',
+              icon: '🔍',
+              category: 'データ変換・エンコード'
+            },
+            {
+              id: 25,
+              name: 'CSV 行の重複削除ツール',
+              description: 'CSV データから重複行を削除し、統計情報を表示',
+              link: './csv-dedup/csv-dedup.html',
+              icon: '🔄',
+              category: 'データ整形・閲覧'
+            },
+            {
+              id: 26,
+              name: 'Markdown → PDF コンバーター',
+              description: 'MarkdownをリアルタイムプレビューしてPDFに変換',
+              link: './markdown-pdf/markdown-pdf.html',
+              icon: '📄',
+              category: 'データ変換・エンコード'
+            },
+            {
+              id: 27,
+              name: '画像リサイズ＆品質調整ツール',
+              description: '画像のサイズと品質を調整してダウンロード',
+              link: './image-resizer/',
+              icon: '🖼️',
+              category: '画像関連'
+            },
+            {
+              id: 28,
+              name: '画像白黒変換ツール',
+              description: '画像をグレースケール（白黒）に変換してダウンロード',
+              link: './image-grayscale/',
+              icon: '⚫',
+              category: '画像関連'
+            },
+            {
+              id: 29,
+              name: 'AND / OR / XOR 2数演算ツール',
+              description: 'ビット演算（論理積・論理和・排他的論理和）を各基数で計算',
+              link: './bitwise-calculator/bitwise-calculator.html',
+              icon: '⚡',
+              category: '計算'
+            },
+            {
+              id: 30,
+              name: 'UTF-8 ⇄ Shift_JIS 変換ツール',
+              description: '文字エンコーディングを相互変換',
+              link: './utf8-sjis/utf8-sjis.html',
+              icon: '🔤',
+              category: 'データ変換・エンコード'
+            }
+          ];
+
+          const categorizedTools = tools.reduce((acc, tool) => {
+            if (!acc[tool.category]) {
+              acc[tool.category] = [];
+            }
+            acc[tool.category].push(tool);
+            return acc;
+          }, {});
+
+          return React.createElement('div', {
+            className: "min-h-screen"
+          }, [
+            React.createElement('header', {
+              key: 'header',
+              className: "bg-white/80 backdrop-blur-sm shadow-sm"
+            }, 
+              React.createElement('div', {
+                className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
+              }, [
+                React.createElement('h1', {
+                  key: 'title',
+                  className: "text-3xl font-bold text-gray-700 text-center"
+                }, [
+                  React.createElement('span', {
+                    key: 'brand',
+                    className: "text-gray-600"
+                  }, 'Pokoro'),
+                  ' Tools'
+                ]),
+                React.createElement('p', {
+                  key: 'subtitle',
+                  className: "text-center text-gray-500 mt-2"
+                }, '便利なWebツール集')
+              ])
+            ),
+            React.createElement('div', {
+              key: 'tools-anchor',
+              id: 'tools',
+              style: { position: 'relative', top: '-80px' }
+            }),
+            React.createElement('main', {
+              key: 'main',
+              className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+            },
+              Object.entries(categorizedTools).map(([category, tools]) => 
+                React.createElement('div', { key: category, className: 'mb-12' }, [
+                  React.createElement('h2', { className: 'text-2xl font-bold text-gray-700 mb-6' }, category),
+                  React.createElement('div', {
+                    className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                  }, 
+                    tools.map((tool) => 
+                      React.createElement('div', {
+                        key: tool.id,
+                        className: "bg-white/70 backdrop-blur-sm rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group border border-gray-100/50"
+                      },
+                        React.createElement('div', {
+                          className: "p-6"
+                        }, [
+                          React.createElement('div', {
+                            key: 'header',
+                            className: "flex items-center mb-4"
+                          }, [
+                            React.createElement('span', {
+                              key: 'icon',
+                              className: "text-3xl mr-3"
+                            }, tool.icon),
+                            React.createElement('h2', {
+                              key: 'name',
+                              className: "text-xl font-semibold text-gray-800 group-hover:text-gray-600 transition-colors"
+                            }, tool.name)
+                          ]),
+                          React.createElement('p', {
+                            key: 'description',
+                            className: "text-gray-600 mb-6 leading-relaxed"
+                          }, tool.description),
+                          React.createElement('a', {
+                            key: 'link',
+                            href: tool.link,
+                            onClick: () => {
+                              sessionStorage.setItem('toolsScrollPosition', window.scrollY.toString());
+                            },
+                            className: "inline-flex items-center px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors duration-200 group-hover:scale-105 transform"
+                          }, [
+                            '使ってみる',
+                            React.createElement('svg', {
+                              key: 'arrow',
+                              className: "ml-2 w-4 h-4",
+                              fill: "none",
+                              stroke: "currentColor",
+                              viewBox: "0 0 24 24"
+                            },
+                              React.createElement('path', {
+                                strokeLinecap: "round",
+                                strokeLinejoin: "round",
+                                strokeWidth: 2,
+                                d: "M9 5l7 7-7 7"
+                              })
+                            )
+                          ])
+                        ])
+                      )
+                    )
+                  )
+                ])
+              )
+            ),
+            React.createElement('footer', {
+              key: 'footer',
+              className: "bg-white/80 backdrop-blur-sm border-t border-gray-200/50 mt-16"
+            },
+              React.createElement('div', {
+                className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+              },
+                React.createElement('div', {
+                  className: "text-center"
+                }, [
+                  React.createElement('p', {
+                    key: 'copyright',
+                    className: "text-gray-500"
+                  }, '© Pokoro 2025. All rights reserved.'),
+                  React.createElement('p', {
+                    key: 'tagline',
+                    className: "text-gray-400 text-sm mt-2"
+                  }, 'Simple tools for everyday tasks')
+                ])
+              )
+            )
+          ]);
+        };
+
+        ReactDOM.render(React.createElement(ToolsPage), document.getElementById('root'));
+    </script>
+</body>
+</html>

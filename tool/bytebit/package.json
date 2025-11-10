@@ -1,0 +1,13 @@
+{
+  "name": "byte-bit-converter-tool",
+  "version": "1.0.0",
+  "description": "バイト⇄ビット換算ツール（Byte⇄Bit Converter）",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["byte", "bit", "converter", "data-size", "tool"],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "utm-query-builder-tool",
+  "version": "1.0.0",
+  "description": "URL クエリ抽出 & UTM ビルダー（URL Query Extractor & UTM Builder）",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["utm", "query", "url", "parameter", "builder", "extractor", "tool"],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AND / OR / XOR 2数演算ツール - Pokoro Tools</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+        
+        const BitwiseCalculator = () => {
+            const [inputA, setInputA] = useState('');
+            const [inputB, setInputB] = useState('');
+            const [baseRadix, setBaseRadix] = useState(10);
+            const [bitLength, setBitLength] = useState(8);
+            const [copyMessage, setCopyMessage] = useState('');
+            const [expandedCategories, setExpandedCategories] = useState({
+                calculatorTools: true,
+                dataConversion: false,
+                devTools: false
+            });
+            
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            // 基数定義
+            const bases = [
+                { value: 2, name: 'Binary', label: '2進数', regex: /^[01]+$/ },
+                { value: 8, name: 'Octal', label: '8進数', regex: /^[0-7]+$/ },
+                { value: 10, name: 'Decimal', label: '10進数', regex: /^[0-9]+$/ },
+                { value: 16, name: 'Hex', label: '16進数', regex: /^[0-9a-fA-F]+$/ }
+            ];
+
+            // バリデーション
+            const validateInput = (value, base) => {
+                if (!value.trim()) return false;
+                const baseInfo = bases.find(b => b.value === base);
+                return baseInfo ? baseInfo.regex.test(value) : false;
+            };
+
+            const hasValidInputs = validateInput(inputA, baseRadix) && validateInput(inputB, baseRadix);
+
+            // 計算結果
+            const results = useMemo(() => {
+                if (!hasValidInputs) {
+                    return { and: null, or: null, xor: null };
+                }
+                
+                const a = parseInt(inputA, baseRadix);
+                const b = parseInt(inputB, baseRadix);
+                
+                return {
+                    and: a & b,
+                    or: a | b,
+                    xor: a ^ b
+                };
+            }, [inputA, inputB, baseRadix, hasValidInputs]);
+
+            // 数値フォーマット
+            const formatNumber = (num, toBase) => {
+                if (num === null || num === undefined) return '';
+                
+                switch (toBase) {
+                    case 2:
+                        return '0b' + num.toString(2).padStart(bitLength, '0');
+                    case 8:
+                        return '0o' + num.toString(8);
+                    case 10:
+                        return num.toString(10);
+                    case 16:
+                        return '0x' + num.toString(16).toUpperCase();
+                    default:
+                        return num.toString(toBase);
+                }
+            };
+
+            // コピー機能
+            const copyToClipboard = async (value) => {
+                try {
+                    await navigator.clipboard.writeText(value);
+                    setCopyMessage('コピーしました！');
+                    setTimeout(() => setCopyMessage(''), 2000);
+                } catch (err) {
+                    setCopyMessage('コピーに失敗しました');
+                    setTimeout(() => setCopyMessage(''), 2000);
+                }
+            };
+
+            // クリア機能
+            const handleClear = () => {
+                setInputA('');
+                setInputB('');
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                    <div className="lg:flex lg:gap-6">
+                        {/* メインコンテンツ */}
+                        <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                            {/* ナビゲーション */}
+                            <div className="mb-4">
+                                <a 
+                                    href="/"
+                                    className="inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                                >
+                                    <svg 
+                                        className="w-5 h-5 mr-2"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path 
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 19l-7-7 7-7"
+                                        />
+                                    </svg>
+                                    ツール一覧に戻る
+                                </a>
+                            </div>
+
+                            {/* タイトル */}
+                            <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800">
+                                AND / OR / XOR 2数演算ツール
+                            </h1>
+
+                            {/* 入力セクション */}
+                            <div className="bg-gray-50 rounded-lg p-6 mb-8">
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4">入力</h2>
+                                
+                                {/* 基数選択 */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        入力の基数
+                                    </label>
+                                    <select
+                                        value={baseRadix}
+                                        onChange={(e) => setBaseRadix(parseInt(e.target.value))}
+                                        className="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
+                                    >
+                                        {bases.map(base => (
+                                            <option key={base.value} value={base.value}>
+                                                {base.label} ({base.name})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* 数値入力 */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            数値 A
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={inputA}
+                                            onChange={(e) => setInputA(e.target.value)}
+                                            placeholder={baseRadix === 16 ? "例: FF" : baseRadix === 2 ? "例: 1010" : "例: 42"}
+                                            className={'w-full px-3 py-2 border rounded-md ' + (inputA && !validateInput(inputA, baseRadix) ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white')}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            数値 B
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={inputB}
+                                            onChange={(e) => setInputB(e.target.value)}
+                                            placeholder={baseRadix === 16 ? "例: AA" : baseRadix === 2 ? "例: 1100" : "例: 24"}
+                                            className={'w-full px-3 py-2 border rounded-md ' + (inputB && !validateInput(inputB, baseRadix) ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white')}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* ビット長設定（2進数表示用） */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        2進数表示のビット長
+                                    </label>
+                                    <select
+                                        value={bitLength}
+                                        onChange={(e) => setBitLength(parseInt(e.target.value))}
+                                        className="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
+                                    >
+                                        <option value={8}>8ビット</option>
+                                        <option value={16}>16ビット</option>
+                                        <option value={32}>32ビット</option>
+                                    </select>
+                                </div>
+
+                                {/* クリアボタン */}
+                                <button
+                                    onClick={handleClear}
+                                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                                >
+                                    クリア
+                                </button>
+                            </div>
+
+                            {/* 結果セクション */}
+                            <div className="mb-8">
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4">計算結果</h2>
+                                
+                                {hasValidInputs ? (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full border-collapse border border-gray-300">
+                                            <thead>
+                                                <tr className="bg-gray-100">
+                                                    <th className="border border-gray-300 px-4 py-2 text-left">演算</th>
+                                                    <th className="border border-gray-300 px-4 py-2 text-left">2進数</th>
+                                                    <th className="border border-gray-300 px-4 py-2 text-left">8進数</th>
+                                                    <th className="border border-gray-300 px-4 py-2 text-left">10進数</th>
+                                                    <th className="border border-gray-300 px-4 py-2 text-left">16進数</th>
+                                                    <th className="border border-gray-300 px-4 py-2 text-center">アクション</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {[
+                                                    { name: 'AND', value: results.and, operator: '&' },
+                                                    { name: 'OR', value: results.or, operator: '|' },
+                                                    { name: 'XOR', value: results.xor, operator: '^' }
+                                                ].map(({ name, value, operator }) => (
+                                                    <tr key={name} className="hover:bg-gray-50">
+                                                        <td className="border border-gray-300 px-4 py-2 font-semibold">
+                                                            {name} ({operator})
+                                                        </td>
+                                                        <td className="border border-gray-300 px-4 py-2 font-mono text-sm">
+                                                            {formatNumber(value, 2)}
+                                                        </td>
+                                                        <td className="border border-gray-300 px-4 py-2 font-mono text-sm">
+                                                            {formatNumber(value, 8)}
+                                                        </td>
+                                                        <td className="border border-gray-300 px-4 py-2 font-mono text-sm">
+                                                            {formatNumber(value, 10)}
+                                                        </td>
+                                                        <td className="border border-gray-300 px-4 py-2 font-mono text-sm">
+                                                            {formatNumber(value, 16)}
+                                                        </td>
+                                                        <td className="border border-gray-300 px-4 py-2 text-center">
+                                                            <div className="flex gap-1 justify-center">
+                                                                {[2, 8, 10, 16].map(base => (
+                                                                    <button
+                                                                        key={base}
+                                                                        onClick={() => copyToClipboard(formatNumber(value, base))}
+                                                                        className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+                                                                        title={'コピー (' + base + '進数)'}
+                                                                    >
+                                                                        {base}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-gray-500">
+                                        有効な数値を入力してください
+                                        {(!inputA || !inputB) && <div className="text-sm mt-2">両方の数値を入力してください</div>}
+                                        {inputA && !validateInput(inputA, baseRadix) && <div className="text-sm mt-2 text-red-600">数値Aが選択された基数に対して無効です</div>}
+                                        {inputB && !validateInput(inputB, baseRadix) && <div className="text-sm mt-2 text-red-600">数値Bが選択された基数に対して無効です</div>}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 使い方 */}
+                            <div className="bg-gray-50 rounded-lg p-6">
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4">使い方</h2>
+                                <ul className="text-sm text-gray-600 space-y-2">
+                                    <li>• 基数を選択して、2つの数値を入力してください</li>
+                                    <li>• AND、OR、XOR演算の結果が自動的に計算されます</li>
+                                    <li>• 結果は2進数、8進数、10進数、16進数で表示されます</li>
+                                    <li>• 各結果の右側のボタンでコピーできます</li>
+                                    <li>• 2進数表示のビット長は8、16、32ビットから選択可能です</li>
+                                    <li>• 入力が無効な場合は赤色でハイライトされます</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* サイドバー (デスクトップ) */}
+                        <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                                    🔗 関連ツール
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                            </div>
+                            <div className="space-y-6">
+                                {/* 計算・変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('calculatorTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🧮 計算・変換</span>
+                                        <svg 
+                                            className={'w-5 h-5 transform transition-transform ' + (expandedCategories.calculatorTools ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.calculatorTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/base-converter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔢 進数変換（2/8/10/16進数）
+                                            </a>
+                                            <a href="/bytebit/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                💾 バイト⇄ビット換算
+                                            </a>
+                                            <a href="/color/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🎨 カラーコード変換
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* データ変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataConversion')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔄 データ変換</span>
+                                        <svg 
+                                            className={'w-5 h-5 transform transition-transform ' + (expandedCategories.dataConversion ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataConversion && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                            <a href="/url/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 URLエンコード
+                                            </a>
+                                            <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 CSV ⇄ JSON
+                                            </a>
+                                            <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 YAML ⇄ JSON
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 開発ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('devTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🛠️ 開発ツール</span>
+                                        <svg 
+                                            className={'w-5 h-5 transform transition-transform ' + (expandedCategories.devTools ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.devTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔍 正規表現テスター
+                                            </a>
+                                            <a href="/json/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📋 JSONフォーマッター
+                                            </a>
+                                            <a href="/password/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔑 ランダムパスワード生成
+                                            </a>
+                                            <a href="/passwordchecker/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 パスワード強度チェッカー
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 使い方のヒント */}
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                                    <ul className="text-sm text-blue-700 space-y-1">
+                                        <li>• ビット演算の学習・検証に</li>
+                                        <li>• プログラミングのデバッグに</li>
+                                        <li>• 論理回路の設計確認に</li>
+                                        <li>• 暗号処理の実装確認に</li>
+                                    </ul>
+                                </div>
+
+                                {/* 技術ブログ */}
+                                <div className="bg-indigo-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                                    <a 
+                                        href="https://pokoroblog.com/" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                    >
+                                        <span className="mr-2">🌐</span>
+                                        Pokoro Blog
+                                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 関連ツール (モバイル) */}
+                    <div className="lg:hidden mt-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                            <p className="text-sm text-gray-600 mb-4">計算・変換の便利なツール</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a href="/base-converter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔢 進数変換
+                                </a>
+                                <a href="/bytebit/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    💾 バイト⇄ビット換算
+                                </a>
+                                <a href="/color/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🎨 カラーコード変換
+                                </a>
+                                <a href="/password/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔑 パスワード生成
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* コピー成功メッセージ */}
+                    {copyMessage && (
+                        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+                            {copyMessage}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<BitwiseCalculator />, document.getElementById('root'));
+    </script>
+</body>
+</html>

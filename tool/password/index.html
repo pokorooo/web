@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ランダムパスワード生成ツール - Pokoro Tools</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const PasswordGenerator = () => {
+            const [length, setLength] = useState(12);
+            const [options, setOptions] = useState({
+                lower: true,
+                upper: true,
+                number: true,
+                symbol: true
+            });
+            const [password, setPassword] = useState('');
+            const [toastVisible, setToastVisible] = useState(false);
+            const [expandedCategories, setExpandedCategories] = useState({
+                calculatorTools: false,
+                dataConversion: false,
+                devTools: true
+            });
+            
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            useEffect(() => {
+                generatePassword();
+            }, [length, options]);
+
+            const characterPool = useMemo(() => {
+                const pools = [];
+                if (options.lower) pools.push('abcdefghijklmnopqrstuvwxyz');
+                if (options.upper) pools.push('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+                if (options.number) pools.push('0123456789');
+                if (options.symbol) pools.push('!@#$%&*?+-=[]{}|;:,.<>');
+                return pools.join('');
+            }, [options]);
+
+            const isValidOptions = useMemo(() => {
+                return Object.values(options).some(Boolean);
+            }, [options]);
+
+            const generatePassword = () => {
+                if (!isValidOptions || characterPool.length === 0) {
+                    setPassword('');
+                    return;
+                }
+
+                const array = new Uint8Array(length);
+                crypto.getRandomValues(array);
+                
+                let result = '';
+                for (let i = 0; i < length; i++) {
+                    result += characterPool[array[i] % characterPool.length];
+                }
+                
+                setPassword(result);
+            };
+
+            const copyToClipboard = async () => {
+                if (!password) return;
+                
+                try {
+                    await navigator.clipboard.writeText(password);
+                    setToastVisible(true);
+                    setTimeout(() => setToastVisible(false), 1500);
+                } catch (err) {
+                    console.error('コピーに失敗しました:', err);
+                }
+            };
+
+            const handleOptionChange = (option) => {
+                setOptions(prev => ({
+                    ...prev,
+                    [option]: !prev[option]
+                }));
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                    <div className="lg:flex lg:gap-6">
+                        {/* メインコンテンツ */}
+                        <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                        {/* ナビゲーション */}
+                        <div className="mb-4">
+                            <a 
+                                href="/"
+                                className="inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                            >
+                                <svg 
+                                    className="w-5 h-5 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path 
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 19l-7-7 7-7"
+                                    />
+                                </svg>
+                                ツール一覧に戻る
+                            </a>
+                        </div>
+
+                        {/* タイトル */}
+                        <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800">
+                            ランダムパスワード生成ツール
+                        </h1>
+
+                        {/* Settings */}
+                        <div className="bg-gray-50 rounded-lg p-6 mb-8">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">設定</h2>
+                            
+                            {/* Length Slider */}
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-3">
+                                    <label className="text-sm font-medium text-gray-700">
+                                        パスワード長
+                                    </label>
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                                        {length} 文字
+                                    </span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="4"
+                                    max="64"
+                                    value={length}
+                                    onChange={(e) => setLength(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                />
+                                <div className="flex justify-between text-sm text-gray-500 mt-1">
+                                    <span>4</span>
+                                    <span>64</span>
+                                </div>
+                            </div>
+
+                            {/* Character Types */}
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-3">
+                                    使用する文字種
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <label className="flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={options.lower}
+                                            onChange={() => handleOptionChange('lower')}
+                                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                                        />
+                                        <span className="ml-2 text-sm text-gray-700">
+                                            小文字 (a-z)
+                                        </span>
+                                    </label>
+                                    <label className="flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={options.upper}
+                                            onChange={() => handleOptionChange('upper')}
+                                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                                        />
+                                        <span className="ml-2 text-sm text-gray-700">
+                                            大文字 (A-Z)
+                                        </span>
+                                    </label>
+                                    <label className="flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={options.number}
+                                            onChange={() => handleOptionChange('number')}
+                                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                                        />
+                                        <span className="ml-2 text-sm text-gray-700">
+                                            数字 (0-9)
+                                        </span>
+                                    </label>
+                                    <label className="flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={options.symbol}
+                                            onChange={() => handleOptionChange('symbol')}
+                                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                                        />
+                                        <span className="ml-2 text-sm text-gray-700">
+                                            記号 (!@#$...)
+                                        </span>
+                                    </label>
+                                </div>
+                                
+                                {!isValidOptions && (
+                                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <p className="text-sm text-red-600 font-medium">
+                                            ⚠️ 少なくとも1つの文字種を選択してください
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Generate Button */}
+                            <button
+                                onClick={generatePassword}
+                                disabled={!isValidOptions}
+                                className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                            >
+                                新しいパスワードを生成
+                            </button>
+                        </div>
+
+                        {/* Generated Password */}
+                        <div className="bg-gray-50 rounded-lg p-6 mb-8">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-semibold text-gray-800">生成されたパスワード</h2>
+                                <button
+                                    onClick={copyToClipboard}
+                                    disabled={!password}
+                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    コピー
+                                </button>
+                            </div>
+                            
+                            <div className="p-4 bg-white rounded-lg border min-h-16 flex items-center">
+                                {password ? (
+                                    <span className="font-mono text-lg text-gray-900 break-all select-all">
+                                        {password}
+                                    </span>
+                                ) : (
+                                    <span className="text-gray-400 italic">
+                                        {isValidOptions ? 'パスワードを生成してください' : '文字種を選択してください'}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 使い方 */}
+                        <div className="bg-gray-50 rounded-lg p-6">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">使い方</h2>
+                            <ul className="text-sm text-gray-600 space-y-2">
+                                <li>• パスワード長と使用する文字種を選択してください</li>
+                                <li>• 暗号学的に安全な乱数を使用してパスワードを生成します</li>
+                                <li>• 生成されたパスワードをコピーして使用できます</li>
+                            </ul>
+                        </div>
+                        </div>
+
+                        {/* サイドバー (デスクトップ) */}
+                        <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                                    🔗 関連ツール
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                            </div>
+                            <div className="space-y-6">
+                                {/* 計算・変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('calculatorTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🧮 計算・変換</span>
+                                        <svg 
+                                            className={'w-5 h-5 transform transition-transform ' + (expandedCategories.calculatorTools ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.calculatorTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/base-converter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔢 進数変換（2/8/10/16進数）
+                                            </a>
+                                            <a href="/bytebit/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                💾 バイト⇄ビット換算
+                                            </a>
+                                            <a href="/bitwise-calculator/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ⚡ AND/OR/XOR演算
+                                            </a>
+                                            <a href="/color/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🎨 カラーコード変換
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* データ変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataConversion')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔄 データ変換</span>
+                                        <svg 
+                                            className={'w-5 h-5 transform transition-transform ' + (expandedCategories.dataConversion ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataConversion && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                            <a href="/url/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 URLエンコード
+                                            </a>
+                                            <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 CSV ⇄ JSON
+                                            </a>
+                                            <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 YAML ⇄ JSON
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 開発ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('devTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🛠️ 開発ツール</span>
+                                        <svg 
+                                            className={'w-5 h-5 transform transition-transform ' + (expandedCategories.devTools ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.devTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔍 正規表現テスター
+                                            </a>
+                                            <a href="/json/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📋 JSONフォーマッター
+                                            </a>
+                                            <a href="/passwordchecker/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 パスワード強度チェッカー
+                                            </a>
+                                            <a href="/cron/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ⏰ Cron式パーサー
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 使い方のヒント */}
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                                    <ul className="text-sm text-blue-700 space-y-1">
+                                        <li>• アカウント作成時のパスワード生成に</li>
+                                        <li>• 既存パスワードの更新時に</li>
+                                        <li>• 一時的なパスワード生成に</li>
+                                        <li>• 複数サービス用の個別パスワード作成に</li>
+                                    </ul>
+                                </div>
+
+                                {/* 技術ブログ */}
+                                <div className="bg-indigo-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                                    <a 
+                                        href="https://pokoroblog.com/" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                    >
+                                        <span className="mr-2">🌐</span>
+                                        Pokoro Blog
+                                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 関連ツール (モバイル) */}
+                    <div className="lg:hidden mt-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                            <p className="text-sm text-gray-600 mb-4">セキュリティ・開発の便利なツール</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a href="/passwordchecker/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔐 パスワード強度チェッカー
+                                </a>
+                                <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔐 Base64変換
+                                </a>
+                                <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔍 正規表現テスター
+                                </a>
+                                <a href="/json/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    📋 JSONフォーマッター
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Toast Notification */}
+                    {toastVisible && (
+                        <div className="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+                            <div className="flex items-center">
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                コピーしました
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<PasswordGenerator />, document.getElementById('root'));
+    </script>
+</body>
+</html>

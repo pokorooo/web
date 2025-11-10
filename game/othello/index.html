@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>オセロ（リバーシ）ゲーム - pokoro</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            padding-top: 70px;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #fefefe 0%, #f8f9fa 50%, #f1f3f4 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #555;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(220, 220, 220, 0.3) 0%, transparent 50%);
+            z-index: -2;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { 
+                background: 
+                    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 80%, rgba(220, 220, 220, 0.3) 0%, transparent 50%);
+            }
+            25% { 
+                background: 
+                    radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 30% 70%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 90% 40%, rgba(220, 220, 220, 0.3) 0%, transparent 50%);
+            }
+            50% { 
+                background: 
+                    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 20% 30%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 60% 20%, rgba(220, 220, 220, 0.3) 0%, transparent 50%);
+            }
+            75% { 
+                background: 
+                    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 90% 80%, rgba(240, 240, 240, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 10% 60%, rgba(220, 220, 220, 0.3) 0%, transparent 50%);
+            }
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+        }
+        .nav-logo h2 {
+            color: #777;
+            font-weight: 700;
+            font-size: 1.4rem;
+            background: linear-gradient(45deg, #999, #777);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+        }
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+        .nav-link {
+            text-decoration: none;
+            color: #777;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+        .nav-link:hover {
+            color: #999;
+            background: rgba(0, 0, 0, 0.03);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 2px;
+            left: 50%;
+            background: linear-gradient(45deg, #999, #bbb);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        .nav-link:hover::after {
+            width: 80%;
+        }
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+        }
+        .bar {
+            width: 25px;
+            height: 3px;
+            background: linear-gradient(45deg, #999, #bbb);
+            margin: 3px 0;
+            transition: 0.3s;
+            border-radius: 2px;
+        }
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+            .nav-menu {
+                position: fixed;
+                left: -100%;
+                top: 70px;
+                flex-direction: column;
+                background-color: white;
+                width: 100%;
+                text-align: center;
+                transition: 0.3s;
+                box-shadow: 0 10px 27px rgba(0, 0, 0, 0.05);
+                padding: 20px 0;
+            }
+            .nav-menu.active {
+                left: 0;
+            }
+            .nav-menu li {
+                margin: 10px 0;
+            }
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #777;
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #777 0%, #999 50%, #bbb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 1.1rem;
+        }
+
+        .game-container {
+            display: flex;
+            max-width: 1000px;
+            margin: 20px auto;
+            gap: 30px;
+            padding: 0 20px;
+            flex: 1;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .board-area {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 2px;
+            background: #27ae60;
+            border: 4px solid #2ecc71;
+            border-radius: 10px;
+            padding: 10px;
+            width: 400px;
+            height: 400px;
+        }
+
+        .cell {
+            background: #2ecc71;
+            border: 1px solid #27ae60;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border-radius: 3px;
+            width: 100%;
+            height: 100%;
+            aspect-ratio: 1;
+        }
+
+        .cell:hover {
+            background: #52c882;
+        }
+
+
+        .stone {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: 2px solid rgba(0,0,0,0.3);
+            transition: all 0.4s ease;
+            animation: placeStone 0.4s ease-out;
+        }
+
+        .stone.black {
+            background: radial-gradient(circle at 30% 30%, #4a4a4a, #1a1a1a);
+            box-shadow: inset 2px 2px 4px rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stone.white {
+            background: radial-gradient(circle at 30% 30%, #ffffff, #e8e8e8);
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        @keyframes placeStone {
+            0% { transform: scale(0) rotate(180deg); }
+            70% { transform: scale(1.1) rotate(0deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        .sidebar {
+            min-width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .info-panel h3 {
+            color: #777;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+
+        .current-player {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .player-stone {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .scores {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .score-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            min-width: 80px;
+        }
+
+        .score-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #999;
+        }
+
+        .score-label {
+            font-size: 0.9rem;
+            color: rgba(0, 0, 0, 0.6);
+            margin-top: 5px;
+        }
+
+        .game-mode {
+            margin-bottom: 20px;
+        }
+
+        .game-mode h4 {
+            color: #777;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.5);
+            color: #777;
+            border: 2px solid rgba(153, 153, 153, 0.3);
+            padding: 10px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.8);
+            border-color: rgba(153, 153, 153, 0.6);
+            transform: translateY(-1px);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #999 0%, #bbb 100%);
+            color: white;
+            border-color: #999;
+            box-shadow: 0 4px 12px rgba(153, 153, 153, 0.3);
+        }
+
+        .mode-btn.active:hover {
+            background: linear-gradient(135deg, #bbb 0%, #999 100%);
+            transform: translateY(-1px);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #999 0%, #bbb 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #bbb 0%, #999 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn.reset {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .btn.reset:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+            box-shadow: 0 8px 24px rgba(231, 76, 60, 0.3);
+        }
+
+        .message {
+            background: rgba(46, 204, 113, 0.2);
+            border: 2px solid #2ecc71;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .message.pass {
+            background: rgba(241, 196, 15, 0.2);
+            border-color: #f1c40f;
+            color: #f39c12;
+        }
+
+        .message.game-over {
+            background: rgba(231, 76, 60, 0.2);
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .instructions h3 {
+            color: #777;
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            color: rgba(0, 0, 0, 0.7);
+        }
+
+        .instructions li:before {
+            content: "●";
+            position: absolute;
+            left: 0;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+                padding: 0 10px;
+            }
+
+            .board {
+                width: 320px;
+                height: 320px;
+            }
+
+            .cell {
+                min-height: 35px;
+            }
+
+            .stone {
+                width: 28px;
+                height: 28px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .sidebar {
+                min-width: auto;
+                width: 100%;
+                max-width: 400px;
+            }
+
+            .scores {
+                justify-content: center;
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .board {
+                width: 280px;
+                height: 280px;
+            }
+
+            .cell {
+                min-height: 30px;
+            }
+
+            .stone {
+                width: 24px;
+                height: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/icon.png" alt="pokoro" style="width: 32px; height: 32px; margin-right: 10px;">
+                <h2><a href="/" style="text-decoration: none; color: inherit;">pokoro</a></h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/tool/index.html" class="nav-link">ツール</a>
+                </li>
+                <li class="nav-item">
+                    <a href="../homepage.html" class="nav-link">ゲーム</a>
+                </li>
+                <li class="nav-item">
+                    <a href="https://pokoroblog.com/" class="nav-link" target="_blank">ブログ</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+    <div class="header">
+        <h1>⚫⚪ オセロ（リバーシ）</h1>
+        <p>相手の石を挟んで自分の色にしよう！</p>
+    </div>
+
+    <div class="game-container">
+        <div class="board-area">
+            <div class="board" id="board">
+                <!-- ボードは JavaScript で生成 -->
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="info-panel">
+                <h3>🎮 ゲーム情報</h3>
+                <div class="current-player" id="currentPlayer">
+                    <span>現在のプレイヤー：</span>
+                    <div class="player-stone black"></div>
+                    <span>黒</span>
+                </div>
+                
+                <div class="scores">
+                    <div class="score-item">
+                        <div class="score-value" id="blackScore">2</div>
+                        <div class="score-label">⚫ プレイヤー</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-value" id="whiteScore">2</div>
+                        <div class="score-label">⚪ AI</div>
+                    </div>
+                </div>
+
+                <div class="game-mode">
+                    <h4>🎯 ゲームモード</h4>
+                    <div class="mode-buttons">
+                        <button class="mode-btn active" data-mode="ai" onclick="setGameMode('ai')">
+                            🤖 AI対戦
+                        </button>
+                        <button class="mode-btn" data-mode="pvp" onclick="setGameMode('pvp')">
+                            👥 2人対戦
+                        </button>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn reset" onclick="resetGame()">🔄 ゲームリセット</button>
+                </div>
+
+                <div id="gameMessage" class="message" style="display: none;"></div>
+            </div>
+
+            <div class="instructions">
+                <h3>📋 遊び方</h3>
+                <ul>
+                    <li>交互に石を置いて相手の石を挟む</li>
+                    <li>挟んだ石は自分の色に変わる</li>
+                    <li>置ける場所がない時はパス</li>
+                    <li>盤面が埋まると終了</li>
+                    <li>石の数が多い方が勝ち</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class OthelloGame {
+            constructor() {
+                this.board = Array(8).fill().map(() => Array(8).fill(0));
+                this.currentPlayer = 1; // 1: 黒, -1: 白
+                this.gameOver = false;
+                this.isAITurn = false;
+                this.gameMode = 'ai'; // 'ai' または 'pvp'
+                
+                this.initializeBoard();
+                this.createBoard();
+                this.updateUI();
+            }
+
+            initializeBoard() {
+                // 初期配置: 中央に白黒各2個ずつ
+                this.board[3][3] = -1; // 白
+                this.board[3][4] = 1;  // 黒
+                this.board[4][3] = 1;  // 黒
+                this.board[4][4] = -1; // 白
+            }
+
+            createBoard() {
+                const boardElement = document.getElementById('board');
+                boardElement.innerHTML = '';
+
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        cell.addEventListener('click', () => this.handleCellClick(row, col));
+                        boardElement.appendChild(cell);
+                    }
+                }
+                
+                this.updateBoard();
+            }
+
+            updateBoard() {
+                const cells = document.querySelectorAll('.cell');
+
+                cells.forEach((cell, index) => {
+                    const row = Math.floor(index / 8);
+                    const col = index % 8;
+                    const value = this.board[row][col];
+
+                    // 石をクリア
+                    cell.innerHTML = '';
+
+                    // 石を配置
+                    if (value !== 0) {
+                        const stone = document.createElement('div');
+                        stone.className = `stone ${value === 1 ? 'black' : 'white'}`;
+                        cell.appendChild(stone);
+                    }
+                });
+            }
+
+            handleCellClick(row, col) {
+                if (this.gameOver || this.board[row][col] !== 0) return;
+
+                if (this.gameMode === 'ai') {
+                    this.handleAIGameClick(row, col);
+                } else {
+                    this.handlePvPGameClick(row, col);
+                }
+            }
+
+            handleAIGameClick(row, col) {
+                if (this.isAITurn) return;
+
+                // プレイヤー（黒）のターンのみ処理
+                if (this.currentPlayer === 1 && this.isValidMove(row, col, this.currentPlayer)) {
+                    this.makeMove(row, col, this.currentPlayer);
+                    this.updateBoard();
+                    this.updateUI();
+                    
+                    // AIのターンに変更
+                    this.currentPlayer = -1;
+                    this.checkGameState();
+                    
+                    // AIのターンを実行
+                    if (!this.gameOver && this.gameMode === 'ai') {
+                        setTimeout(() => this.makeAIMove(), 1000);
+                    }
+                }
+            }
+
+            handlePvPGameClick(row, col) {
+                // プレイヤー同士の対戦（両方とも人間）
+                if (this.isValidMove(row, col, this.currentPlayer)) {
+                    this.makeMove(row, col, this.currentPlayer);
+                    this.updateBoard();
+                    this.updateUI();
+                    
+                    // 相手のターンに変更
+                    this.currentPlayer *= -1;
+                    this.checkGameState();
+                }
+            }
+
+            isValidMove(row, col, player) {
+                if (this.board[row][col] !== 0) return false;
+
+                const directions = [
+                    [-1, -1], [-1, 0], [-1, 1],
+                    [0, -1],           [0, 1],
+                    [1, -1],  [1, 0],  [1, 1]
+                ];
+
+                for (let [dx, dy] of directions) {
+                    if (this.checkDirection(row, col, dx, dy, player)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            checkDirection(row, col, dx, dy, player) {
+                let x = row + dx;
+                let y = col + dy;
+                let hasOpponentStone = false;
+
+                while (x >= 0 && x < 8 && y >= 0 && y < 8) {
+                    if (this.board[x][y] === 0) return false;
+                    if (this.board[x][y] === -player) {
+                        hasOpponentStone = true;
+                    } else if (this.board[x][y] === player) {
+                        return hasOpponentStone;
+                    }
+                    x += dx;
+                    y += dy;
+                }
+                return false;
+            }
+
+            makeMove(row, col, player) {
+                this.board[row][col] = player;
+
+                const directions = [
+                    [-1, -1], [-1, 0], [-1, 1],
+                    [0, -1],           [0, 1],
+                    [1, -1],  [1, 0],  [1, 1]
+                ];
+
+                for (let [dx, dy] of directions) {
+                    this.flipStones(row, col, dx, dy, player);
+                }
+            }
+
+            flipStones(row, col, dx, dy, player) {
+                if (!this.checkDirection(row, col, dx, dy, player)) return;
+
+                let x = row + dx;
+                let y = col + dy;
+
+                while (x >= 0 && x < 8 && y >= 0 && y < 8 && this.board[x][y] === -player) {
+                    this.board[x][y] = player;
+                    x += dx;
+                    y += dy;
+                }
+            }
+
+            getValidMoves(player) {
+                const moves = [];
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if (this.isValidMove(row, col, player)) {
+                            moves.push({ row, col });
+                        }
+                    }
+                }
+                return moves;
+            }
+
+            makeAIMove() {
+                this.isAITurn = true;
+                const validMoves = this.getValidMoves(-1); // AI（白）の有効手
+                
+                if (validMoves.length > 0) {
+                    // AIの手を選択（簡単なアルゴリズム）
+                    const bestMove = this.selectBestMove(validMoves);
+                    
+                    setTimeout(() => {
+                        this.makeMove(bestMove.row, bestMove.col, -1);
+                        this.updateBoard();
+                        this.updateUI();
+                        
+                        // プレイヤーのターンに戻す
+                        this.currentPlayer = 1;
+                        this.isAITurn = false;
+                        this.checkGameState();
+                    }, 500);
+                } else {
+                    // AIがパス
+                    this.showMessage('白（AI）はパスします', 'pass');
+                    this.currentPlayer = 1;
+                    this.isAITurn = false;
+                    setTimeout(() => this.checkGameState(), 1500);
+                }
+            }
+
+            selectBestMove(validMoves) {
+                // 簡単なAI: より多くの石をひっくり返せる手を選ぶ
+                let bestMove = validMoves[0];
+                let maxFlips = 0;
+
+                for (let move of validMoves) {
+                    const flips = this.countFlips(move.row, move.col, -1);
+                    if (flips > maxFlips) {
+                        maxFlips = flips;
+                        bestMove = move;
+                    }
+                }
+
+                // 同じ価値の手が複数ある場合はランダム選択
+                const bestMoves = validMoves.filter(move => 
+                    this.countFlips(move.row, move.col, -1) === maxFlips);
+                return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+            }
+
+            countFlips(row, col, player) {
+                let totalFlips = 0;
+                const directions = [
+                    [-1, -1], [-1, 0], [-1, 1],
+                    [0, -1],           [0, 1],
+                    [1, -1],  [1, 0],  [1, 1]
+                ];
+
+                for (let [dx, dy] of directions) {
+                    if (this.checkDirection(row, col, dx, dy, player)) {
+                        let x = row + dx;
+                        let y = col + dy;
+                        while (x >= 0 && x < 8 && y >= 0 && y < 8 && this.board[x][y] === -player) {
+                            totalFlips++;
+                            x += dx;
+                            y += dy;
+                        }
+                    }
+                }
+                return totalFlips;
+            }
+
+            checkGameState() {
+                const currentValidMoves = this.getValidMoves(this.currentPlayer);
+                const opponentValidMoves = this.getValidMoves(-this.currentPlayer);
+
+                if (currentValidMoves.length === 0) {
+                    if (opponentValidMoves.length === 0) {
+                        // ゲーム終了
+                        this.endGame();
+                    } else {
+                        // パス
+                        this.handlePass();
+                    }
+                } else {
+                    this.hideMessage();
+                    this.updateUI();
+                }
+            }
+
+            handlePass() {
+                let playerName;
+                if (this.gameMode === 'ai') {
+                    playerName = this.currentPlayer === 1 ? '黒（プレイヤー）' : '白（AI）';
+                } else {
+                    playerName = this.currentPlayer === 1 ? '黒プレイヤー' : '白プレイヤー';
+                }
+                
+                this.showMessage(`${playerName}はパスします`, 'pass');
+                this.currentPlayer *= -1;
+                this.updateUI();
+                
+                if (this.gameMode === 'ai' && this.currentPlayer === -1 && !this.gameOver) {
+                    // AIのターンならAIの手を実行
+                    setTimeout(() => this.makeAIMove(), 1500);
+                } else {
+                    setTimeout(() => this.checkGameState(), 1500);
+                }
+            }
+
+            endGame() {
+                this.gameOver = true;
+                const scores = this.getScores();
+                let message = '';
+
+                if (this.gameMode === 'ai') {
+                    if (scores.black > scores.white) {
+                        message = `🎉 プレイヤーの勝利！ (${scores.black} - ${scores.white})`;
+                    } else if (scores.white > scores.black) {
+                        message = `🤖 AIの勝利！ (${scores.white} - ${scores.black})`;
+                    } else {
+                        message = `🤝 引き分け！ (${scores.black} - ${scores.white})`;
+                    }
+                } else {
+                    if (scores.black > scores.white) {
+                        message = `🎉 黒プレイヤーの勝利！ (${scores.black} - ${scores.white})`;
+                    } else if (scores.white > scores.black) {
+                        message = `🎉 白プレイヤーの勝利！ (${scores.white} - ${scores.black})`;
+                    } else {
+                        message = `🤝 引き分け！ (${scores.black} - ${scores.white})`;
+                    }
+                }
+
+                this.showMessage(message, 'game-over');
+                this.updateUI();
+            }
+
+            getScores() {
+                let black = 0, white = 0;
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        if (this.board[row][col] === 1) black++;
+                        else if (this.board[row][col] === -1) white++;
+                    }
+                }
+                return { black, white };
+            }
+
+            updateUI() {
+                const scores = this.getScores();
+                document.getElementById('blackScore').textContent = scores.black;
+                document.getElementById('whiteScore').textContent = scores.white;
+
+                const currentPlayerEl = document.getElementById('currentPlayer');
+                let playerName, playerClass;
+                
+                if (this.gameMode === 'ai') {
+                    if (this.isAITurn) {
+                        playerName = '🤖 AI（考え中...）';
+                        playerClass = 'white';
+                    } else if (this.currentPlayer === 1) {
+                        playerName = '👤 プレイヤー';
+                        playerClass = 'black';
+                    } else {
+                        playerName = '🤖 AI';
+                        playerClass = 'white';
+                    }
+                } else {
+                    // PvPモード
+                    if (this.currentPlayer === 1) {
+                        playerName = '👤 黒プレイヤー';
+                        playerClass = 'black';
+                    } else {
+                        playerName = '👤 白プレイヤー';
+                        playerClass = 'white';
+                    }
+                }
+                
+                currentPlayerEl.innerHTML = `
+                    <span>現在のターン：</span>
+                    <div class="player-stone ${playerClass}"></div>
+                    <span>${playerName}</span>
+                `;
+
+                if (this.gameOver) {
+                    currentPlayerEl.innerHTML = '<span>🎮 ゲーム終了</span>';
+                }
+
+                // スコアラベルをモードに応じて更新
+                this.updateScoreLabels();
+            }
+
+            updateScoreLabels() {
+                const scoreLabels = document.querySelectorAll('.score-label');
+                if (scoreLabels.length >= 2) {
+                    const blackLabel = scoreLabels[0];
+                    const whiteLabel = scoreLabels[1];
+                    
+                    if (this.gameMode === 'ai') {
+                        blackLabel.textContent = '⚫ プレイヤー';
+                        whiteLabel.textContent = '⚪ AI';
+                    } else {
+                        blackLabel.textContent = '⚫ 黒プレイヤー';
+                        whiteLabel.textContent = '⚪ 白プレイヤー';
+                    }
+                }
+            }
+
+            showMessage(text, type = 'info') {
+                const messageEl = document.getElementById('gameMessage');
+                messageEl.textContent = text;
+                messageEl.className = `message ${type}`;
+                messageEl.style.display = 'block';
+            }
+
+            hideMessage() {
+                const messageEl = document.getElementById('gameMessage');
+                messageEl.style.display = 'none';
+            }
+
+            setGameMode(mode) {
+                console.log('Game mode changed to:', mode);
+                this.gameMode = mode;
+                this.reset();
+                
+                // モードボタンのアクティブ状態を更新
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.mode === mode);
+                });
+                
+                console.log('Current game mode:', this.gameMode);
+            }
+
+            reset() {
+                this.board = Array(8).fill().map(() => Array(8).fill(0));
+                this.currentPlayer = 1;
+                this.gameOver = false;
+                this.isAITurn = false;
+                this.initializeBoard();
+                this.updateBoard();
+                this.updateUI();
+                this.hideMessage();
+            }
+        }
+
+        // グローバル変数とファンクション
+        let game;
+
+        function setGameMode(mode) {
+            try {
+                console.log('Setting game mode to:', mode);
+                game.setGameMode(mode);
+            } catch (error) {
+                console.error('Error setting game mode:', error);
+            }
+        }
+
+        function resetGame() {
+            game.reset();
+        }
+
+        // ゲーム開始
+        window.addEventListener('load', () => {
+            game = new OthelloGame();
+        });
+    </script>
+</body>
+</html>

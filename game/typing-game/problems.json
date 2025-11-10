@@ -1,0 +1,368 @@
+{
+  "easy": [
+    {
+      "japanese": "こんにちは。今日はいい天気ですね。",
+      "romaji": "konnichihakyouhaiitenkidesune"
+    },
+    {
+      "japanese": "プログラミングは楽しいです。",
+      "romaji": "puroguraminguhatanosiiidesu"
+    },
+    {
+      "japanese": "コーヒーを飲みながら作業します。",
+      "romaji": "ko-hi-wonominagarasagyousimasu"
+    },
+    {
+      "japanese": "新しい技術を学ぶのが好きです。",
+      "romaji": "atarasigijutuomanabunogasukidesu"
+    },
+    {
+      "japanese": "毎日少しずつ成長していきます。",
+      "romaji": "mainichisukosidutuseicousiteikimasu"
+    },
+    {
+      "japanese": "お疲れ様でした。",
+      "romaji": "otukaresamadesita"
+    },
+    {
+      "japanese": "明日は休みです。",
+      "romaji": "asitahayasumiidesu"
+    },
+    {
+      "japanese": "パソコンで資料を作成します。",
+      "romaji": "pasokondesiryo-wosakuseisimasu"
+    },
+    {
+      "japanese": "友達と映画を見に行きます。",
+      "romaji": "tomodachitoeigawominiikimasu"
+    },
+    {
+      "japanese": "勉強するのは大切です。",
+      "romaji": "benkyousurunohataisetudesu"
+    },
+    {
+      "japanese": "今日の天気は晴れです。",
+      "romaji": "kyounotenkihaharedesu"
+    },
+    {
+      "japanese": "電車で会社に行きます。",
+      "romaji": "denshadekaishaniiikimasu"
+    },
+    {
+      "japanese": "昼食はレストランで食べます。",
+      "romaji": "chuushokuharesutorandetabemasu"
+    },
+    {
+      "japanese": "本を読むのが趣味です。",
+      "romaji": "honwoyomunogashumidesu"
+    },
+    {
+      "japanese": "日本語を学習しています。",
+      "romaji": "nihongowogakushuushiteimasu"
+    },
+    {
+      "japanese": "音楽を聞くのが好きです。",
+      "romaji": "ongakuwokikunogasukidesu"
+    },
+    {
+      "japanese": "家族と一緒に住んでいます。",
+      "romaji": "kazokutoisshoninundeimasu"
+    },
+    {
+      "japanese": "週末は公園を散歩します。",
+      "romaji": "shuumatsuhakouen-wosanposhimasu"
+    },
+    {
+      "japanese": "新しいプロジェクトが始まりました。",
+      "romaji": "atarashiipurojekutogahashimarimashita"
+    },
+    {
+      "japanese": "時間があるときは読書をします。",
+      "romaji": "jikangaarutokihadokushowoshimasu"
+    },
+    {
+      "japanese": "スポーツをするのは健康に良いです。",
+      "romaji": "supo-tsuwosururunohakenkouniyoidesu"
+    },
+    {
+      "japanese": "会議の準備をしています。",
+      "romaji": "kaiginojunbiwoshiteimasu"
+    },
+    {
+      "japanese": "今度一緒に映画を見ませんか。",
+      "romaji": "kondoisshonnieigawomimasenka"
+    },
+    {
+      "japanese": "美味しい料理を作りました。",
+      "romaji": "oishiiryouriwotsukurimashita"
+    },
+    {
+      "japanese": "買い物に行く予定です。",
+      "romaji": "kaimononiikuyoteidesu"
+    },
+    {
+      "japanese": "英語も勉強したいです。",
+      "romaji": "eigomobenkyoushitaidesu"
+    },
+    {
+      "japanese": "早起きは健康に良いと思います。",
+      "romaji": "hayaokihakenkouniyoitoomoimasu"
+    },
+    {
+      "japanese": "コンピューターを使うのは簡単です。",
+      "romaji": "konpyu-ta-wotsukarunohakantandesu"
+    },
+    {
+      "japanese": "明日の会議の資料を作成中です。",
+      "romaji": "ashitanokaiginoshiryouwosakuseichuudesu"
+    },
+    {
+      "japanese": "インターネットで情報を検索しました。",
+      "romaji": "inta-nettodejouhouokensakushimashita"
+    }
+  ],
+  "medium": [
+    {
+      "japanese": "JavaScriptは動的なプログラミング言語です。",
+      "romaji": "javascripthadoutekinapuroguramingugengodesu"
+    },
+    {
+      "japanese": "レスポンシブデザインにより最適な表示が可能になります。",
+      "romaji": "responsibudesainnniyorisaitekinahyouzigakanouninarimasu"
+    },
+    {
+      "japanese": "データベースは情報を効率的に管理するシステムです。",
+      "romaji": "de-tabe-suhajouhouokouritsutekinikanrisurusisutemedesu"
+    },
+    {
+      "japanese": "クラウドコンピューティングは現代のIT基盤です。",
+      "romaji": "kuraudokonpyu-tinguhagendainoitkibandesu"
+    },
+    {
+      "japanese": "ユーザーエクスペリエンスを向上させることが重要です。",
+      "romaji": "yu-za-ekusupiriensuwokojousaserukotigajuuyoudesu"
+    },
+    {
+      "japanese": "アプリケーションのパフォーマンスを最適化する必要があります。",
+      "romaji": "apurike-shonnopafomansuosaiteki-kasuruhistuyougaarimasu"
+    },
+    {
+      "japanese": "セキュリティ対策は企業にとって最重要課題です。",
+      "romaji": "sekyuriteitaisakuhakigyounito-tesaijuuyoukadaidesu"
+    },
+    {
+      "japanese": "ウェブサイトのアクセシビリティを向上させましょう。",
+      "romaji": "uebusaitono-akusesibilitiwokojousasemasho-"
+    },
+    {
+      "japanese": "バックアップとリストアの手順を確認してください。",
+      "romaji": "bakkuapputorisutonoteju-wokakuninshitekudasai"
+    },
+    {
+      "japanese": "APIの設計においてRESTful原則を遵守することが大切です。",
+      "romaji": "apinosekke-iniokiteresutulugensokuwojunshusurukotogataisetsudesu"
+    },
+    {
+      "japanese": "フロントエンド開発におけるモジュラー設計の重要性を理解しました。",
+      "romaji": "hurontoendokaihatuniokerumojura-sekkeinnojuuyouseiworikaishimashita"
+    },
+    {
+      "japanese": "テスト駆動開発はソフトウェア品質向上に効果的です。",
+      "romaji": "tesutokudoukaihatsuhasohutouea-hinshitsukojouniko-katekidesu"
+    },
+    {
+      "japanese": "継続的インテグレーションにより開発効率が向上します。",
+      "romaji": "keizokutekiintegure-shonniyorikaihatsukou-ritsugakojousimasu"
+    },
+    {
+      "japanese": "マイクロフロントエンドアーキテクチャの採用を検討しています。",
+      "romaji": "maikuronutoendoa-kitekuchanosaiyouwokentousiteimasu"
+    },
+    {
+      "japanese": "プロトタイピングツールを使用してUIデザインを作成します。",
+      "romaji": "purototaipingutsu-ruwoshiyoushiteuidezainwosakuseishimasu"
+    },
+    {
+      "japanese": "バージョン管理システムはチーム開発において必須です。",
+      "romaji": "ba-jonnkanrisisutemu hachi-mukaihatsuniokitehisshudesu"
+    },
+    {
+      "japanese": "リファクタリングによりコードの可読性を改善できます。",
+      "romaji": "rihuakutaringunniyorikoshino-kadokuseiwokaizendekimasu"
+    },
+    {
+      "japanese": "ペアプログラミングは知識共有と品質向上に役立ちます。",
+      "romaji": "peapuroguraminguhachishikikyouyuutohinsits-kojouninyakudachimasu"
+    },
+    {
+      "japanese": "コードレビューは開発プロセスの重要な要素です。",
+      "romaji": "ko-dorebyu-hakaihatsu-purosesunojuuyounayousodesude su"
+    },
+    {
+      "japanese": "アジャイル開発手法により柔軟な対応が可能になります。",
+      "romaji": "ajairukaihatsu-tesuubanyori-juunantataiou-gakanouna-narimasu"
+    },
+    {
+      "japanese": "DevOpsの実践により開発と運用の連携を強化します。",
+      "romaji": "devopsnojissenniyorikaihatsuton-tsunoyou-norenkeiwokyoukashimasu"
+    },
+    {
+      "japanese": "サーバーレスアーキテクチャはスケーラビリティに優れています。",
+      "romaji": "sa-ba-resua-kitekuchahasu-ke-rabirititinyousureteimasu"
+    },
+    {
+      "japanese": "モニタリングと監視システムによりシステム健全性を確保します。",
+      "romaji": "monitaringutokansi-sisutemu niyorisisutemu-kenzenseiwokakuhoshimasu"
+    },
+    {
+      "japanese": "パフォーマンステストにより潜在的な問題を事前に発見できます。",
+      "romaji": "paromansu-tesutoniyori-senzaiteki-namondaiwojizen-nihakkendekimasu"
+    },
+    {
+      "japanese": "自動化により反復作業の効率を大幅に向上させることができます。",
+      "romaji": "jidoukaniyori-hanpuku-sagyounokouritsuwotaihani-kojousaserukotogadekimasu"
+    },
+    {
+      "japanese": "設計パターンを適切に適用することでコードの保守性が向上します。",
+      "romaji": "sekkei-patanwotekisetsuni-tekiyou-surukoto-deko-donohoshusega-kojousimasu"
+    },
+    {
+      "japanese": "ドキュメンテーションは長期的なプロジェクト成功の鍵です。",
+      "romaji": "dokyumennte-shonha-choukiteki-napurojekuto-seikouno-kagidesu"
+    },
+    {
+      "japanese": "技術的負債の管理は持続可能な開発に不可欠です。",
+      "romaji": "gijutsuteki-husai-nookanriha-jizoku-kanouna-kaihatsunihukaketsudesu"
+    },
+    {
+      "japanese": "イノベーションを促進するために新しい技術の習得が重要です。",
+      "romaji": "inobe-shonwo-sokushin-suru-tameni-tarashii-gijutsuno-shuutokuga-juuyoudesu"
+    },
+    {
+      "japanese": "クロスプラットフォーム開発により幅広いユーザーにリーチできます。",
+      "romaji": "kurosu-plattoho-mu-kaihatsu-niyori-habahiroi-yu-za-niri-chi-dekimasu"
+    }
+  ],
+  "hard": [
+    {
+      "japanese": "機械学習アルゴリズムの最適化には特徴量エンジニアリングが重要です。",
+      "romaji": "kikigakusuuarugoritumunosaitekinihatok houryouenfiniaringugjuuyoudesu"
+    },
+    {
+      "japanese": "分散システムにおけるCAP定理の三つの特性は重要な概念です。",
+      "romaji": "bunsansisute muniokerurcapteiirimittunot okuseiha juuyouangainendesu"
+    },
+    {
+      "japanese": "量子コンピューティングは従来の計算能力を超えた技術です。",
+      "romaji": "ryoushikonpyu-tinguha juurainokeisannouryokuwokoetagijutudesu"
+    },
+    {
+      "japanese": "ブロックチェーン技術は分散型台帳システムとして注目されています。",
+      "romaji": "burokkuche-ngijutuhubunsan-gataichousisutemu toshitechuumokusareteimasu"
+    },
+    {
+      "japanese": "深層学習における勾配消失問題は最適化において重要な課題です。",
+      "romaji": "shinsougakushuuniokerukobaishoushitumondahasaiteki-kaniokitejuuyounakadaidesu"
+    },
+    {
+      "japanese": "マイクロサービスアーキテクチャは大規模システム開発に適用されます。",
+      "romaji": "maikurosa-bisa-kitekuchuhaikibokisaisutemu kaihatunitekiyousaremasu"
+    },
+    {
+      "japanese": "コンテナオーケストレーションツールは運用効率を大幅に向上させます。",
+      "romaji": "kontenao-kesutore-shontsu-ruhaunye-kouritsuwotaihabuni kojousasemasu"
+    },
+    {
+      "japanese": "GraphQLはRESTfulAPIに代わる新しいデータクエリ言語として普及しています。",
+      "romaji": "graphqlharesuturulapinidawaruatarahishide-takue-rigengotoshitehukyushiteimasu"
+    },
+    {
+      "japanese": "エッジコンピューティングはクラウドとIOTデバイス間の遅延を削減します。",
+      "romaji": "ejjikonpyu-tinguhakuraudotoiotdebaisu-kannotijennwosakugeishimasu"
+    },
+    {
+      "japanese": "ゼロトラストセキュリティモデルは現代のサイバーセキュリティ戦略の基盤です。",
+      "romaji": "zerotorasutosekyuritimo-deruhagendainosaiba-sekyuritisenryakunokibandesu"
+    },
+    {
+      "japanese": "フェデレーテッドラーニングは分散機械学習の新しいパラダイムです。",
+      "romaji": "hedere-teddora-ninguhubusankikaikakushuunooatarashiiparadaimudesu"
+    },
+    {
+      "japanese": "サーバーレスコンピューティングにおけるコールドスタート問題の解決策を検討しています。",
+      "romaji": "sa-ba-resukonpyu-tingnniokeruko-rudosuta-tomondainokaiketsusaku-wokentousiteimasu"
+    },
+    {
+      "japanese": "エンタープライズレベルのデータガバナンス戦略実装には包括的なアプローチが必要です。",
+      "romaji": "enta-puraizu-rebrunoda-tagabananseu-senryaku-jissounnihahhokatsutekinaa-puro-chiganitsuyoudesu"
+    },
+    {
+      "japanese": "ハイブリッドクラウドインフラストラクチャの最適化には複雑な要素の調整が不可欠です。",
+      "romaji": "haiburiddo-kuraudo-inhurasutorakuchano-saiteki-kanihahukuzatsuna-yousono-chousei-gafukaketsudesu"
+    },
+    {
+      "japanese": "分散型台帳技術を活用したスマートコントラクトの実装には高度な専門知識が求められます。",
+      "romaji": "bunsangata-ichou-gijutsuwo-katsuyoushita-suma-to-kontorakutono-jissounnihako-donaseumon-chishikiga-motomeraremasu"
+    },
+    {
+      "japanese": "リアルタイムストリーミングデータ処理における遅延最小化は重要な技術課題です。",
+      "romaji": "riarutaimu-sutori-mingu-de-ta-shoriiokerui-tijenn-saishoudawa-juuyouna-gijutsu-kadaidesu"
+    },
+    {
+      "japanese": "暗号化通信プロトコルの量子コンピューター耐性評価は今後の重要な研究分野です。",
+      "romaji": "angouka-tuushin-purotokoruno-ryoushi-konpyu-ta-taisei-hyouka-hakonogono-juuyounu-kenkyuu-bunyadesu"
+    },
+    {
+      "japanese": "大規模分散システムにおけるコンセンサスアルゴリズムの性能最適化が課題となっています。",
+      "romaji": "daikibo-busansisutemu-niokeru-konsensasu-arugoritumuno-seinou-saikitekinaga-kadaitona-teimasu"
+    },
+    {
+      "japanese": "プライバシー保護技術を統合したフェデレーテッドアナリティクスの実装が注目されています。",
+      "romaji": "puraibashi-hogo-gijutsuwo-tougousshita-hedere-teddo-anaritikusuno-jissou-gachuumokusareteimasu"
+    },
+    {
+      "japanese": "エッジAIコンピューティングにおけるモデル圧縮と推論最適化の研究が進展しています。",
+      "romaji": "ejji-ai-konpyu-tingu-niokeru-moderu-asshuku-nosuiron-saiteki-ka-nokenkyuu-ga-shintenshiteimasu"
+    },
+    {
+      "japanese": "自律分散システムにおける創発的動作の予測と制御は重要な課題です。",
+      "romaji": "jiritsu-busansisutemu-niokeru-souhatsu-teki-dousano-yosoku-tseseigyowa-juuyouna-kadaidesu"
+    },
+    {
+      "japanese": "ポストクォンタム暗号技術の標準化と実装に向けた準備が急務となっています。",
+      "romaji": "posuto-ruontamu-angouu-gijutsuno-hyoujun-kaotozissouni-muketa-junbiga-kyuumu-tona-teimasu"
+    },
+    {
+      "japanese": "メタバースプラットフォームにおけるスケーラブルな物理シミュレーション技術が重要です。",
+      "romaji": "metaba-su-purattoho-mu-niokeru-ske-raburabut-suri-shimyure-shon-gijutuga-juuyoudesu"
+    },
+    {
+      "japanese": "分散機械学習システムにおけるプライバシー保護と計算効率のトレードオフ最適化が求められています。",
+      "romaji": "bunsan-kikai-gakushuu-sisutemu-niokeru-puraibashi-hogo-tsokesa-nkouritutsno-tore-doohu-saiteki-gamotou-merareteimasu"
+    },
+    {
+      "japanese": "イマーシブテクノロジーを活用したコラボレーティブバーチャル環境の設計と実装には革新的なアプローチが必要です。",
+      "romaji": "ima-shibu-tekuroruro-wo-katsuyoushita-koraore-tibu-boaruru-kankyouno-sekkei-ushji-ssounnihakaku-shinntekina-apuro-chiga-sittuyoudesu"
+    },
+    {
+      "japanese": "自己修復型分散システムアーキテクチャにおける障害予測と自動復旧メカニズムの研究が注目されています。",
+      "romaji": "jikoshufuku-gat-subusansisutemu-a-kitekuchaniokeru-shuugai-yosokuumojudou-hukkyuu-merani-zumuno-kenkyuu-ga-chuumokusareteimasu"
+    },
+    {
+      "japanese": "量子インターネットプロトコルの開発と量子もつれ通信の実用化に向けた技術的挑戦が続いています。",
+      "romaji": "ryoushi-inta-netto-purotokorno-kaihatsu-tsugag-ryoushi-motsuretuu-sintuno-jitsuyouka-ni-muketa-gijutsuteki-chousen-ga-tsuzuiteimasu"
+    },
+    {
+      "japanese": "ニューロモルフィックコンピューティングアーキテクチャによる低消費電力AIチップの設計が革新的な発展を遂げています。",
+      "romaji": "nyu-ro-modhikko-konpyu-tingu-a-kitekuchaniryoru-teishohi-denryoku-ai-chiupuno-sekkei-gakakushin-tekina-hatten-wotogedeimasu"
+    },
+    {
+      "japanese": "バイオインスパイアードアルゴリズムを用いた最適化問題における計算複雑性の理論的解析が進歩しています。",
+      "romaji": "baio-insupaia-do-arugoritumu-womochinta-saiteki-mondai-niokeru-kesan-zukuzetseino-rontek-kaiseki-ga-shimpo-shiteimasu"
+    },
+    {
+      "japanese": "次世代通信技術におけるミリ波とテラヘルツ帯域を活用した超高速データ伝送システムの実現が期待されています。",
+      "romaji": "jisedai-tuushin-gijutsuniokeru-mirinama-itste-tahertzseitai-wo-katsuyoushita-choukousoku-de-ta-denshousisutemu-nojitsu-gemgakitai-sareteimasu"
+    }
+  ]
+}

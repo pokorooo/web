@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>画像白黒変換＆ダウンロード - Pokoro Tools</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+        
+        const ImageGrayscale = () => {
+            const [originalFile, setOriginalFile] = useState(null);
+            const [originalPreview, setOriginalPreview] = useState('');
+            const [grayscalePreview, setGrayscalePreview] = useState('');
+            const [grayscaleBlob, setGrayscaleBlob] = useState(null);
+            const [quality, setQuality] = useState(80);
+            const [isDragOver, setIsDragOver] = useState(false);
+            const [error, setError] = useState('');
+            const [downloadMessage, setDownloadMessage] = useState('');
+            const [isProcessing, setIsProcessing] = useState(false);
+            const fileInputRef = useRef(null);
+            const canvasRef = useRef(null);
+            const [expandedCategories, setExpandedCategories] = useState({
+                imageTools: true,
+                webDesign: false,
+                dataConversion: false
+            });
+            
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+            const SUPPORTED_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
+
+            // ファイルサイズを KB で表示
+            const formatFileSize = (bytes) => {
+                return (bytes / 1024).toFixed(1) + ' KB';
+            };
+
+            // グレースケール変換
+            const convertToGrayscale = (imageElement) => {
+                return new Promise((resolve, reject) => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        // 元画像のサイズに設定
+                        canvas.width = imageElement.naturalWidth;
+                        canvas.height = imageElement.naturalHeight;
+
+                        // 画像を描画
+                        ctx.drawImage(imageElement, 0, 0);
+
+                        // ピクセルデータを取得
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imageData.data;
+
+                        // グレースケール変換（各ピクセルのRGB平均値を計算）
+                        for (let i = 0; i < data.length; i += 4) {
+                            const avg = Math.round((data[i] + data[i + 1] + data[i + 2]) / 3);
+                            data[i] = avg;     // Red
+                            data[i + 1] = avg; // Green
+                            data[i + 2] = avg; // Blue
+                            // Alpha (data[i + 3]) はそのまま
+                        }
+
+                        // 変換したデータを戻す
+                        ctx.putImageData(imageData, 0, 0);
+
+                        resolve(canvas);
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
+            };
+
+            // プレビュー用サムネイル作成
+            const createThumbnailCanvas = (sourceCanvas) => {
+                const thumbnailCanvas = document.createElement('canvas');
+                const ctx = thumbnailCanvas.getContext('2d');
+                
+                const maxSize = 200;
+                const { width: originalWidth, height: originalHeight } = sourceCanvas;
+                
+                let { width, height } = sourceCanvas;
+                if (width > height) {
+                    if (width > maxSize) {
+                        height = (height * maxSize) / width;
+                        width = maxSize;
+                    }
+                } else {
+                    if (height > maxSize) {
+                        width = (width * maxSize) / height;
+                        height = maxSize;
+                    }
+                }
+
+                thumbnailCanvas.width = width;
+                thumbnailCanvas.height = height;
+                
+                ctx.drawImage(sourceCanvas, 0, 0, width, height);
+                return thumbnailCanvas;
+            };
+
+            // ファイル処理
+            const handleFile = async (selectedFile) => {
+                setError('');
+                setGrayscalePreview('');
+                setGrayscaleBlob(null);
+                setIsProcessing(true);
+                
+                if (!selectedFile) {
+                    setIsProcessing(false);
+                    return;
+                }
+
+                // ファイルサイズチェック
+                if (selectedFile.size > MAX_FILE_SIZE) {
+                    setError(`ファイルサイズが大きすぎます（最大 ${MAX_FILE_SIZE / 1024 / 1024}MB）`);
+                    setIsProcessing(false);
+                    return;
+                }
+
+                // 形式チェック
+                if (!SUPPORTED_FORMATS.includes(selectedFile.type)) {
+                    setError('対応していない形式です（JPEG, PNG, WebP のみ対応）');
+                    setIsProcessing(false);
+                    return;
+                }
+
+                setOriginalFile(selectedFile);
+
+                try {
+                    // 元画像プレビュー作成
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        setOriginalPreview(e.target.result);
+
+                        // 画像要素作成
+                        const img = new Image();
+                        img.onload = async () => {
+                            try {
+                                // グレースケール変換
+                                const grayscaleCanvas = await convertToGrayscale(img);
+                                
+                                // サムネイル作成
+                                const thumbnailCanvas = createThumbnailCanvas(grayscaleCanvas);
+                                const thumbnailDataUrl = thumbnailCanvas.toDataURL();
+                                setGrayscalePreview(thumbnailDataUrl);
+
+                                // ダウンロード用Blob作成
+                                const outputType = selectedFile.type;
+                                const qualityValue = (outputType === 'image/jpeg' || outputType === 'image/webp') 
+                                    ? quality / 100 
+                                    : undefined;
+
+                                grayscaleCanvas.toBlob((blob) => {
+                                    setGrayscaleBlob(blob);
+                                    setIsProcessing(false);
+                                }, outputType, qualityValue);
+
+                            } catch (err) {
+                                setError('グレースケール変換に失敗しました: ' + err.message);
+                                setIsProcessing(false);
+                            }
+                        };
+                        img.onerror = () => {
+                            setError('画像の読み込みに失敗しました');
+                            setIsProcessing(false);
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = () => {
+                        setError('ファイルの読み込みに失敗しました');
+                        setIsProcessing(false);
+                    };
+                    reader.readAsDataURL(selectedFile);
+
+                } catch (err) {
+                    setError('処理中にエラーが発生しました: ' + err.message);
+                    setIsProcessing(false);
+                }
+            };
+
+            // 品質変更時の再変換
+            useEffect(() => {
+                if (originalFile && originalPreview) {
+                    // 少し遅延させて変換（スライダー操作中の重い処理を避ける）
+                    const timer = setTimeout(() => {
+                        handleFile(originalFile);
+                    }, 300);
+                    return () => clearTimeout(timer);
+                }
+            }, [quality]);
+
+            // ドラッグ＆ドロップ処理
+            const handleDragOver = (e) => {
+                e.preventDefault();
+                setIsDragOver(true);
+            };
+
+            const handleDragLeave = (e) => {
+                e.preventDefault();
+                setIsDragOver(false);
+            };
+
+            const handleDrop = (e) => {
+                e.preventDefault();
+                setIsDragOver(false);
+                
+                const droppedFile = e.dataTransfer.files[0];
+                handleFile(droppedFile);
+            };
+
+            const handleFileSelect = (e) => {
+                const selectedFile = e.target.files[0];
+                handleFile(selectedFile);
+            };
+
+            // ダウンロード処理
+            const handleDownload = () => {
+                if (!grayscaleBlob || !originalFile) return;
+
+                const url = URL.createObjectURL(grayscaleBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                
+                // ファイル名生成
+                const originalName = originalFile.name.split('.').slice(0, -1).join('.');
+                const extension = originalFile.name.split('.').pop();
+                link.download = `${originalName}_grayscale.${extension}`;
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                setDownloadMessage('Downloaded!');
+                setTimeout(() => setDownloadMessage(''), 1500);
+            };
+
+            // ファイル選択ボタンクリック
+            const handleFileButtonClick = () => {
+                fileInputRef.current?.click();
+            };
+
+            // クリア処理
+            const handleClear = () => {
+                setOriginalFile(null);
+                setOriginalPreview('');
+                setGrayscalePreview('');
+                setGrayscaleBlob(null);
+                setError('');
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                    <div className="lg:flex lg:gap-6">
+                        {/* メインコンテンツ */}
+                        <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                            {/* ナビゲーション */}
+                            <div className="mb-4">
+                                <a
+                                    href="/"
+                                    onClick={() => {
+                                        sessionStorage.setItem('toolsScrollPosition', window.scrollY.toString());
+                                    }}
+                                    className="inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                                >
+                                    <svg
+                                        className="w-5 h-5 mr-2"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 19l-7-7 7-7"
+                                        />
+                                    </svg>
+                                    ツール一覧に戻る
+                                </a>
+                            </div>
+                            
+                            <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
+                                <span className="mr-3">⚫</span>
+                                画像白黒変換ツール
+                            </h1>
+                            
+                            <p className="text-center text-gray-600 mb-8">
+                                画像をグレースケール（白黒）に変換してダウンロード
+                            </p>
+
+                            {/* 入力カード */}
+                            <div className="bg-gray-50 rounded-lg p-6 mb-8">
+                                <h2 className="text-xl font-semibold text-gray-800 mb-6">
+                                    画像アップロード
+                                </h2>
+
+                                {/* ドラッグ＆ドロップ領域 */}
+                                <div
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors mb-6 ${
+                                        isDragOver 
+                                            ? 'border-indigo-500 bg-indigo-50' 
+                                            : 'border-gray-300 hover:border-indigo-400'
+                                    }`}
+                                >
+                                    <svg
+                                        className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                                        stroke="currentColor"
+                                        fill="none"
+                                        viewBox="0 0 48 48"
+                                    >
+                                        <path
+                                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                            strokeWidth={2}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                    <p className="text-gray-600 mb-2">
+                                        画像をドラッグ＆ドロップ
+                                    </p>
+                                    <p className="text-gray-500 text-sm mb-4">
+                                        または
+                                    </p>
+                                    <button
+                                        onClick={handleFileButtonClick}
+                                        className="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                                    >
+                                        画像を選択
+                                    </button>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        JPEG, PNG, WebP（最大10MB）
+                                    </p>
+                                </div>
+
+                                {/* 品質設定（JPEG/WebP用） */}
+                                {originalFile && (originalFile.type === 'image/jpeg' || originalFile.type === 'image/webp') && (
+                                    <div className="mb-6">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            品質 ({quality}%)
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="50"
+                                            max="100"
+                                            value={quality}
+                                            onChange={(e) => setQuality(parseInt(e.target.value))}
+                                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                        />
+                                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                            <span>50%</span>
+                                            <span>100%</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* エラー表示 */}
+                                {error && (
+                                    <div className="p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm">
+                                        {error}
+                                    </div>
+                                )}
+
+                                {/* クリアボタン */}
+                                {originalFile && (
+                                    <button
+                                        onClick={handleClear}
+                                        className="mt-4 px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                                    >
+                                        クリア
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* プレビューカード */}
+                            {(originalPreview || grayscalePreview) && (
+                                <div className="bg-gray-50 rounded-lg p-6 mb-8">
+                                    <h2 className="text-xl font-semibold text-gray-800 mb-6">
+                                        プレビュー
+                                    </h2>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {/* 元画像 */}
+                                        {originalPreview && (
+                                            <div className="text-center">
+                                                <h3 className="text-lg font-medium text-gray-700 mb-4">
+                                                    元画像
+                                                </h3>
+                                                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                                    <img
+                                                        src={originalPreview}
+                                                        alt="Original"
+                                                        className="max-w-full max-h-48 mx-auto rounded"
+                                                    />
+                                                    <p className="text-sm text-gray-500 mt-2">
+                                                        {formatFileSize(originalFile.size)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* グレースケール画像 */}
+                                        <div className="text-center">
+                                            <h3 className="text-lg font-medium text-gray-700 mb-4">
+                                                グレースケール
+                                            </h3>
+                                            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                                {isProcessing ? (
+                                                    <div className="flex items-center justify-center h-48">
+                                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                                        <span className="ml-3 text-gray-600">変換中...</span>
+                                                    </div>
+                                                ) : grayscalePreview ? (
+                                                    <>
+                                                        <img
+                                                            src={grayscalePreview}
+                                                            alt="Grayscale"
+                                                            className="max-w-full max-h-48 mx-auto rounded"
+                                                        />
+                                                        {grayscaleBlob && (
+                                                            <p className="text-sm text-gray-500 mt-2">
+                                                                {formatFileSize(grayscaleBlob.size)}
+                                                            </p>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <div className="h-48 flex items-center justify-center text-gray-400">
+                                                        変換待ち
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ダウンロードカード */}
+                            {grayscaleBlob && (
+                                <div className="bg-white rounded-lg shadow-lg p-6 text-center mb-8">
+                                    <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                                        ダウンロード
+                                    </h2>
+                                    <p className="text-gray-600 mb-6">
+                                        グレースケール変換が完了しました
+                                    </p>
+                                    <button
+                                        onClick={handleDownload}
+                                        className="px-8 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors text-lg"
+                                    >
+                                        ダウンロード
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* 使い方説明 */}
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <h3 className="font-semibold text-blue-800 mb-2">使い方</h3>
+                                <div className="text-sm text-blue-700 space-y-1">
+                                    <p>• 画像をドラッグ&ドロップするか、「画像を選択」で画像を読み込みます</p>
+                                    <p>• 自動的にグレースケール変換が実行され、プレビューが表示されます</p>
+                                    <p>• JPEG・WebP画像の場合は品質スライダーで調整可能</p>
+                                    <p>• 「ダウンロード」ボタンで変換された画像を保存</p>
+                                    <p>• 対応形式: JPEG, PNG, WebP（最大10MB）</p>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        {/* サイドバー (デスクトップ) */}
+                        <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                                    🔗 関連ツール
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                            </div>
+                            <div className="space-y-6">
+                                {/* 画像関連ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('imageTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🖼️ 画像関連</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.imageTools ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.imageTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/image-resizer/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🖼️ 画像リサイズ
+                                            </a>
+                                            <a href="/exifviewer/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📊 EXIFビューアー
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Web・デザインツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('webDesign')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🎨 Web・デザイン</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.webDesign ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.webDesign && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/color/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🎨 カラーパレット
+                                            </a>
+                                            <a href="/qr/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📱 QRコード生成
+                                            </a>
+                                            <a href="/urlshortener/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 URL短縮ツール
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* データ変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataConversion')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔄 データ変換</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.dataConversion ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataConversion && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                            <a href="/url/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 URLエンコード
+                                            </a>
+                                            <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 CSV ⇄ JSON
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 使い方のヒント */}
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                                    <ul className="text-sm text-blue-700 space-y-1">
+                                        <li>• モノクロデザイン用画像作成に</li>
+                                        <li>• ファイルサイズの減少効果に</li>
+                                        <li>• プリント用白黒画像作成に</li>
+                                        <li>• アート・芸術作品作成に</li>
+                                    </ul>
+                                </div>
+
+                                {/* 技術ブログ */}
+                                <div className="bg-indigo-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                                    <a 
+                                        href="https://pokoroblog.com/" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                    >
+                                        <span className="mr-2">🌐</span>
+                                        Pokoro Blog
+                                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 関連ツール (モバイル) */}
+                    <div className="lg:hidden mt-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                            <p className="text-sm text-gray-600 mb-4">画像編集・デザインの便利なツール</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a href="/image-resizer/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🖼️ 画像リサイズ
+                                </a>
+                                <a href="/exifviewer/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    📊 EXIFビューアー
+                                </a>
+                                <a href="/color/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🎨 カラーパレット
+                                </a>
+                                <a href="/qr/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    📱 QRコード生成
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* トーストメッセージ */}
+                    {downloadMessage && (
+                        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+                            {downloadMessage}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<ImageGrayscale />, document.getElementById('root'));
+    </script>
+</body>
+</html>

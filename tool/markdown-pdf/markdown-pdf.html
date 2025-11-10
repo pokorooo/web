@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown → PDF コンバーター - Pokoro Tools</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/marked@9.1.6/marked.min.js"></script>
+    <script src="https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    typography: {
+                        DEFAULT: {
+                            css: {
+                                maxWidth: 'none',
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="/related-tools-config.js"></script>
+    <script src="/RelatedTools.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+        
+        const MarkdownToPDF = () => {
+            const [markdown, setMarkdown] = useState('');
+            const [html, setHtml] = useState('');
+            const [pageSize, setPageSize] = useState('a4');
+            const [orientation, setOrientation] = useState('portrait');
+            const [error, setError] = useState('');
+            const [copyMessage, setCopyMessage] = useState('');
+            const [isGenerating, setIsGenerating] = useState(false);
+            const [expandedCategories, setExpandedCategories] = useState({
+                textTools: true,
+                dataConversion: false,
+                devTools: false
+            });
+            const previewRef = useRef(null);
+            
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            // サンプルMarkdown
+            const sampleMarkdown = `# サンプルドキュメント
+
+これは**Markdown → PDF**変換ツールのサンプルです。
+
+## 機能
+
+- Markdownのリアルタイムプレビュー
+- PDF出力機能
+- カスタマイズ可能なページ設定
+
+### リスト例
+
+1. 番号付きリスト
+2. 順序のあるアイテム
+   - サブアイテム
+   - ネストされたリスト
+
+### コードブロック
+
+\`\`\`javascript
+function hello() {
+    console.log("Hello, World!");
+}
+\`\`\`
+
+### 引用
+
+> これは引用文の例です。
+> 複数行にわたる引用も可能です。
+
+### テーブル
+
+| 項目 | 説明 | 値 |
+|------|------|-----|
+| A | サンプルA | 100 |
+| B | サンプルB | 200 |
+| C | サンプルC | 300 |
+
+---
+
+**太字**、*斜体*、~~取り消し線~~、\`インラインコード\`も利用できます。`;
+
+            // 初期サンプル設定
+            useEffect(() => {
+                setMarkdown(sampleMarkdown);
+            }, []);
+
+            // Markdown → HTML変換
+            useEffect(() => {
+                if (markdown.trim() === '') {
+                    setHtml('');
+                    return;
+                }
+
+                try {
+                    // markedの設定
+                    marked.setOptions({
+                        breaks: true,
+                        gfm: true
+                    });
+                    
+                    const convertedHtml = marked.parse(markdown);
+                    setHtml(convertedHtml);
+                    setError('');
+                } catch (err) {
+                    setError('Markdownの変換に失敗しました: ' + err.message);
+                    setHtml('');
+                }
+            }, [markdown]);
+
+            // PDF生成
+            const generatePDF = async () => {
+                if (!html || !previewRef.current) return;
+
+                setIsGenerating(true);
+                setError('');
+
+                try {
+                    const element = previewRef.current;
+                    
+                    const options = {
+                        margin: 10,
+                        filename: 'document.pdf',
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { 
+                            scale: 2,
+                            useCORS: true,
+                            letterRendering: true
+                        },
+                        jsPDF: { 
+                            unit: 'mm', 
+                            format: pageSize, 
+                            orientation: orientation 
+                        }
+                    };
+
+                    await html2pdf().set(options).from(element).save();
+                } catch (err) {
+                    setError('PDF生成に失敗しました: ' + err.message);
+                } finally {
+                    setIsGenerating(false);
+                }
+            };
+
+            // Markdownコピー
+            const handleCopy = async () => {
+                if (!markdown) return;
+                
+                try {
+                    await navigator.clipboard.writeText(markdown);
+                    setCopyMessage('Copied!');
+                    setTimeout(() => setCopyMessage(''), 1500);
+                } catch (err) {
+                    setCopyMessage('Copy failed');
+                    setTimeout(() => setCopyMessage(''), 1500);
+                }
+            };
+
+            // クリア
+            const handleClear = () => {
+                setMarkdown('');
+                setError('');
+            };
+
+            // サンプル読み込み
+            const handleLoadSample = () => {
+                setMarkdown(sampleMarkdown);
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                    <div className="lg:flex lg:gap-6">
+                        {/* メインコンテンツ */}
+                        <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                        {React.createElement('div', {
+                            key: 'nav',
+                            className: "mb-4"
+                        }, 
+                            React.createElement('a', {
+                                key: 'back',
+                                href: '/',
+                                className: "inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                            }, [
+                                React.createElement('svg', {
+                                    key: 'arrow',
+                                    className: "w-5 h-5 mr-2",
+                                    fill: "none",
+                                    stroke: "currentColor",
+                                    viewBox: "0 0 24 24"
+                                },
+                                    React.createElement('path', {
+                                        strokeLinecap: "round",
+                                        strokeLinejoin: "round",
+                                        strokeWidth: 2,
+                                        d: "M15 19l-7-7 7-7"
+                                    })
+                                ),
+                                'ツール一覧に戻る'
+                            ])
+                        )}
+                        
+                        <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800 bg-white py-4 px-6 rounded-lg">
+                            Markdown → PDF コンバーター
+                        </h1>
+                        {/* コントロールパネル */}
+                        <div className="bg-gray-50 rounded-lg p-6 mb-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                                {/* ページサイズ */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">ページサイズ</label>
+                                    <select
+                                        value={pageSize}
+                                        onChange={(e) => setPageSize(e.target.value)}
+                                        className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+                                    >
+                                        <option value="a4">A4</option>
+                                        <option value="letter">Letter</option>
+                                    </select>
+                                </div>
+
+                                {/* 方向 */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">方向</label>
+                                    <select
+                                        value={orientation}
+                                        onChange={(e) => setOrientation(e.target.value)}
+                                        className="w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-900"
+                                    >
+                                        <option value="portrait">縦</option>
+                                        <option value="landscape">横</option>
+                                    </select>
+                                </div>
+
+                                {/* アクションボタン */}
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleLoadSample}
+                                        className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                    >
+                                        サンプル
+                                    </button>
+                                    <button
+                                        onClick={handleClear}
+                                        className="px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                                    >
+                                        クリア
+                                    </button>
+                                </div>
+
+                                {/* PDF生成ボタン */}
+                                <button
+                                    onClick={generatePDF}
+                                    disabled={!html || isGenerating}
+                                    className={`px-6 py-2 font-medium rounded-lg transition-colors ${
+                                        html && !isGenerating
+                                            ? 'bg-red-600 text-white hover:bg-red-700'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {isGenerating ? 'Generating...' : 'Download PDF'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* エラー表示 */}
+                        {error && (
+                            <div className="mb-6 p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
+                                {error}
+                            </div>
+                        )}
+
+                        {/* メインエリア */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* 入力エリア */}
+                            <div className="bg-gray-50 rounded-lg p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-semibold text-gray-800">Markdown 入力</h2>
+                                    <button
+                                        onClick={handleCopy}
+                                        disabled={!markdown}
+                                        className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+                                            markdown
+                                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        Copy Markdown
+                                    </button>
+                                </div>
+                                <textarea
+                                    value={markdown}
+                                    onChange={(e) => setMarkdown(e.target.value)}
+                                    placeholder={`# Hello World
+
+これはサンプルです。
+
+## 見出し2
+
+- リスト項目
+- **太字**と*斜体*
+- \`コード\`
+
+\`\`\`javascript
+console.log("Hello!");
+\`\`\``}
+                                    className="w-full h-96 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none font-mono text-sm bg-white text-gray-900"
+                                    spellCheck={false}
+                                />
+                            </div>
+
+                            {/* プレビューエリア */}
+                            <div className="bg-gray-50 rounded-lg p-6">
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4">プレビュー / PDF</h2>
+                                <div className="border border-gray-300 rounded-lg overflow-auto max-h-96">
+                                    <div
+                                        ref={previewRef}
+                                        className="p-6 prose prose-sm max-w-none"
+                                        dangerouslySetInnerHTML={{ __html: html || '<p class="text-gray-500 italic">プレビューがここに表示されます</p>' }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 使い方説明 */}
+                        <div className="bg-gray-50 rounded-lg p-6 mt-8">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">使い方</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-600">
+                                <div>
+                                    <h3 className="font-medium text-gray-800 mb-2">基本操作</h3>
+                                    <ul className="space-y-1">
+                                        <li>左側にMarkdownを入力</li>
+                                        <li>右側でリアルタイムプレビュー</li>
+                                        <li>ページ設定を調整</li>
+                                        <li>「Download PDF」でPDF生成</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="font-medium text-gray-800 mb-2">Markdown記法</h3>
+                                    <ul className="space-y-1">
+                                        <li># 見出し1 ～ ###### 見出し6</li>
+                                        <li>**太字** *斜体* ~~取り消し~~</li>
+                                        <li>- リスト 1. 番号付きリスト</li>
+                                        <li>```コードブロック``` `インライン`</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                        
+                        {/* サイドバー (デスクトップ) */}
+                        <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                                    🔗 関連ツール
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                            </div>
+                            <div className="space-y-6">
+                                {/* テキスト操作ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('textTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>📝 テキスト操作</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.textTools ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.textTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/text-formatter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ✏️ テキスト整形
+                                            </a>
+                                            <a href="/moji_count/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📝 文字数カウント
+                                            </a>
+                                            <a href="/textdiff/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📄 テキスト比較
+                                            </a>
+                                            <a href="/markdown-to-html/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 Markdown → HTML
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* データ変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataConversion')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔄 データ変換</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.dataConversion ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataConversion && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                            <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 CSV ⇄ JSON
+                                            </a>
+                                            <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 YAML ⇄ JSON
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 開発ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('devTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🛠️ 開発ツール</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.devTools ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.devTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔍 正規表現テスター
+                                            </a>
+                                            <a href="/json/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📋 JSONフォーマッター
+                                            </a>
+                                            <a href="/cron/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ⏰ Cron式パーサー
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 使い方のヒント */}
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                                    <ul className="text-sm text-blue-700 space-y-1">
+                                        <li>• ドキュメント作成からPDF出力まで</li>
+                                        <li>• GitHub READMEのプレビューに</li>
+                                        <li>• 技術資料・仕様書作成に</li>
+                                        <li>• ブログ記事の下書きに</li>
+                                    </ul>
+                                </div>
+
+                                {/* 技術ブログ */}
+                                <div className="bg-indigo-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                                    <a 
+                                        href="https://pokoroblog.com/" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                    >
+                                        <span className="mr-2">🌐</span>
+                                        Pokoro Blog
+                                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 関連ツール (モバイル) */}
+                    <div className="lg:hidden mt-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                            <p className="text-sm text-gray-600 mb-4">テキスト処理・変換の便利なツール</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a href="/text-formatter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    ✏️ テキスト整形
+                                </a>
+                                <a href="/markdown-to-html/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔄 Markdown → HTML
+                                </a>
+                                <a href="/moji_count/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    📝 文字数カウント
+                                </a>
+                                <a href="/textdiff/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    📄 テキスト比較
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* トーストメッセージ */}
+                    {copyMessage && (
+                        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+                            {copyMessage}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(React.createElement(MarkdownToPDF), document.getElementById('root'));
+    </script>
+</body>
+</html>

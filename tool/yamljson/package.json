@@ -1,0 +1,13 @@
+{
+  "name": "yaml-json-converter-tool",
+  "version": "1.0.0",
+  "description": "YAML ⇄ JSON 変換ツール（YAML ⇄ JSON Converter）",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["yaml", "json", "converter", "data-conversion", "tool"],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown → HTML変換ツール - Pokoro Tools</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/marked@9.1.6/marked.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const MarkdownToHtmlConverter = () => {
+            const [markdown, setMarkdown] = useState('');
+            const [html, setHtml] = useState('');
+            const [copyMessage, setCopyMessage] = useState('');
+            const [expandedCategories, setExpandedCategories] = useState({
+                dataConversion: true,
+                devTools: false,
+                textTools: false
+            });
+            
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            // Markdownの初期サンプル
+            const sampleMarkdown = `# サンプル見出し
+
+これは**太字**と*斜体*のテキストです。
+
+## リスト例
+
+- アイテム1
+- アイテム2
+  - サブアイテム
+
+## リンクとコード
+
+[リンク](https://example.com)
+
+\`\`\`javascript
+console.log("Hello, World!");
+\`\`\`
+
+> 引用文の例です。`;
+
+            // Markdownを初期表示用に設定
+            useEffect(() => {
+                setMarkdown(sampleMarkdown);
+            }, []);
+
+            // Markdown → HTML変換
+            useEffect(() => {
+                if (markdown.trim() === '') {
+                    setHtml('');
+                    return;
+                }
+
+                try {
+                    // markedライブラリでMarkdownをHTMLに変換
+                    const convertedHtml = marked.parse(markdown);
+                    setHtml(convertedHtml);
+                } catch (error) {
+                    setHtml('<!-- 変換エラーが発生しました -->');
+                }
+            }, [markdown]);
+
+            // HTMLコピー処理
+            const handleCopy = async () => {
+                if (!html) return;
+                
+                try {
+                    await navigator.clipboard.writeText(html);
+                    setCopyMessage('HTMLコードをコピーしました！');
+                    setTimeout(() => setCopyMessage(''), 3000);
+                } catch (err) {
+                    setCopyMessage('コピーに失敗しました');
+                    setTimeout(() => setCopyMessage(''), 3000);
+                }
+            };
+
+            // クリア処理
+            const handleClear = () => {
+                setMarkdown('');
+                setHtml('');
+            };
+
+            // サンプル復元処理
+            const handleLoadSample = () => {
+                setMarkdown(sampleMarkdown);
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                    <div className="lg:flex lg:gap-6">
+                        {/* メインコンテンツ */}
+                        <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                        {React.createElement('div', {
+                            key: 'nav',
+                            className: "mb-4"
+                        }, 
+                            React.createElement('a', {
+                                key: 'back',
+                                href: '/',
+                                onClick: () => {
+                                    sessionStorage.setItem('toolsScrollPosition', window.scrollY.toString());
+                                },
+                                className: "inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                            }, [
+                                React.createElement('svg', {
+                                    key: 'arrow',
+                                    className: "w-5 h-5 mr-2",
+                                    fill: "none",
+                                    stroke: "currentColor",
+                                    viewBox: "0 0 24 24"
+                                },
+                                    React.createElement('path', {
+                                        strokeLinecap: "round",
+                                        strokeLinejoin: "round",
+                                        strokeWidth: 2,
+                                        d: "M15 19l-7-7 7-7"
+                                    })
+                                ),
+                                'ツール一覧に戻る'
+                            ])
+                        )}
+                        
+                        <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800 bg-white py-4 px-6 rounded-lg">
+                            Markdown → HTML変換ツール
+                        </h1>
+                        {/* コントロールボタン */}
+                        <div className="flex flex-wrap justify-center gap-4 mb-6">
+                            <button
+                                onClick={handleLoadSample}
+                                className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                            >
+                                サンプルを読み込む
+                            </button>
+                            <button
+                                onClick={handleClear}
+                                className="px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors duration-200"
+                            >
+                                クリア
+                            </button>
+                        </div>
+
+                        {/* 変換エリア */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Markdown入力エリア */}
+                            <div className="bg-gray-50 rounded-lg p-6">
+                                <h2 className="text-xl font-semibold text-gray-700 mb-4">Markdown入力</h2>
+                                <textarea
+                                    value={markdown}
+                                    onChange={(e) => setMarkdown(e.target.value)}
+                                    placeholder="ここにMarkdownを入力してください"
+                                    className="w-full h-96 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none font-mono text-sm"
+                                    spellCheck={false}
+                                />
+                            </div>
+
+                            {/* HTML出力エリア */}
+                            <div className="bg-gray-50 rounded-lg p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-semibold text-gray-700">変換されたHTML</h2>
+                                    {html && (
+                                        <button
+                                            onClick={handleCopy}
+                                            className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                            コピー
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="h-96 border border-gray-300 rounded-lg overflow-auto">
+                                    <pre className="p-4 text-sm font-mono bg-gray-50 whitespace-pre-wrap break-words h-full">
+                                        <code>{html || '変換されたHTMLがここに表示されます'}</code>
+                                    </pre>
+                                </div>
+
+                                {/* コピーメッセージ */}
+                                {copyMessage && (
+                                    <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-center">
+                                        {copyMessage}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 使い方説明 */}
+                        <div className="bg-gray-50 rounded-lg p-6 mt-8">
+                            <h2 className="text-xl font-semibold text-gray-700 mb-4">使い方・Markdown記法例</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                                <div>
+                                    <h3 className="font-medium text-gray-800 mb-2">基本記法</h3>
+                                    <ul className="space-y-1 text-gray-600">
+                                        <li>**太字** または __太字__</li>
+                                        <li>*斜体* または _斜体_</li>
+                                        <li>`インラインコード`</li>
+                                        <li>[リンク](URL)</li>
+                                        <li>![画像](URL)</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="font-medium text-gray-800 mb-2">構造要素</h3>
+                                    <ul className="space-y-1 text-gray-600">
+                                        <li># 見出し1 ～ ###### 見出し6</li>
+                                        <li>- リスト項目</li>
+                                        <li>1. 番号付きリスト</li>
+                                        <li>> 引用</li>
+                                        <li>```言語名 でコードブロック</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                        
+                        {/* サイドバー (デスクトップ) */}
+                        <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                                    🔗 関連ツール
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                            </div>
+                            <div className="space-y-6">
+                                {/* データ変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataConversion')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔄 データ変換</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.dataConversion ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataConversion && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                            <a href="/url/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 URLエンコード
+                                            </a>
+                                            <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 CSV ⇄ JSON
+                                            </a>
+                                            <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 YAML ⇄ JSON
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 開発ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('devTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🛠️ 開発ツール</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.devTools ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.devTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔍 正規表現テスター
+                                            </a>
+                                            <a href="/json/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📋 JSONフォーマッター
+                                            </a>
+                                            <a href="/cron/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ⏰ Cron式パーサー
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* テキスト操作ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('textTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>📝 テキスト操作</span>
+                                        <svg 
+                                            className={`w-5 h-5 transform transition-transform ${expandedCategories.textTools ? 'rotate-180' : ''}`}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.textTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/text-formatter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ✏️ テキスト整形
+                                            </a>
+                                            <a href="/moji_count/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📝 文字数カウント
+                                            </a>
+                                            <a href="/textdiff/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📄 テキスト比較
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 使い方のヒント */}
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                                    <ul className="text-sm text-blue-700 space-y-1">
+                                        <li>• ブログ記事の下書きに</li>
+                                        <li>• READMEファイルのHTML化に</li>
+                                        <li>• ドキュメント作成に</li>
+                                        <li>• メールHTMLテンプレートに</li>
+                                    </ul>
+                                </div>
+
+                                {/* 技術ブログ */}
+                                <div className="bg-indigo-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                                    <a 
+                                        href="https://pokoroblog.com/" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                    >
+                                        <span className="mr-2">🌐</span>
+                                        Pokoro Blog
+                                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 関連ツール (モバイル) */}
+                    <div className="lg:hidden mt-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                            <p className="text-sm text-gray-600 mb-4">データ変換・文書作成の便利なツール</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔐 Base64変換
+                                </a>
+                                <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔄 CSV ⇄ JSON
+                                </a>
+                                <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔄 YAML ⇄ JSON
+                                </a>
+                                <a href="/text-formatter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    ✏️ テキスト整形
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(React.createElement(MarkdownToHtmlConverter), document.getElementById('root'));
+    </script>
+</body>
+</html>

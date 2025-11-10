@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSV ⇄ CSV 変換ツール - Pokoro Tools</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const TsvCsvConverter = () => {
+            const [mode, setMode] = useState('tsv-to-csv');
+            const [inputText, setInputText] = useState('名前\t年齢\t職業\n田中太郎\t30\tエンジニア\n佐藤花子\t25\tデザイナー\n山田次郎\t35\tマネージャー');
+            const [outputText, setOutputText] = useState('');
+            const [csvDelimiter, setCsvDelimiter] = useState(',');
+            const [error, setError] = useState('');
+            const [copyMessage, setCopyMessage] = useState('');
+            const fileInputRef = useRef(null);
+            const [expandedCategories, setExpandedCategories] = useState({
+                calculatorTools: false,
+                dataConversion: true,
+                devTools: false
+            });
+            
+            // カテゴリの開閉切り替え
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            useEffect(() => {
+                handleConvert();
+            }, [inputText, mode, csvDelimiter]);
+
+            const handleConvert = () => {
+                if (!inputText.trim()) {
+                    setOutputText('');
+                    setError('');
+                    return;
+                }
+
+                try {
+                    if (mode === 'tsv-to-csv') {
+                        // TSV → CSV
+                        const parsed = Papa.parse(inputText, {
+                            delimiter: '\t',
+                            header: false,
+                            skipEmptyLines: true
+                        });
+                        
+                        if (parsed.errors.length > 0) {
+                            setError('TSV解析エラー: ' + parsed.errors[0].message);
+                            setOutputText('');
+                            return;
+                        }
+                        
+                        const csvOutput = Papa.unparse(parsed.data, {
+                            delimiter: csvDelimiter,
+                            header: false
+                        });
+                        
+                        setOutputText(csvOutput);
+                    } else {
+                        // CSV → TSV
+                        const parsed = Papa.parse(inputText, {
+                            delimiter: csvDelimiter,
+                            header: false,
+                            skipEmptyLines: true
+                        });
+                        
+                        if (parsed.errors.length > 0) {
+                            setError('CSV解析エラー: ' + parsed.errors[0].message);
+                            setOutputText('');
+                            return;
+                        }
+                        
+                        const tsvOutput = Papa.unparse(parsed.data, {
+                            delimiter: '\t',
+                            header: false
+                        });
+                        
+                        setOutputText(tsvOutput);
+                    }
+                    
+                    setError('');
+                } catch (e) {
+                    setError('変換エラー: ' + e.message);
+                    setOutputText('');
+                }
+            };
+
+            const handleFileUpload = (file) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target.result;
+                    setInputText(content);
+                    
+                    // ファイル拡張子からモードを自動判定
+                    if (file.name.endsWith('.tsv')) {
+                        setMode('tsv-to-csv');
+                    } else if (file.name.endsWith('.csv')) {
+                        setMode('csv-to-tsv');
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+            const copyToClipboard = async () => {
+                if (!outputText) return;
+                
+                try {
+                    await navigator.clipboard.writeText(outputText);
+                    setCopyMessage('コピーしました！');
+                    setTimeout(() => setCopyMessage(''), 1500);
+                } catch (err) {
+                    console.error('コピーに失敗しました:', err);
+                }
+            };
+
+            const downloadFile = () => {
+                if (!outputText) return;
+                
+                const extension = mode === 'tsv-to-csv' ? 'csv' : 'tsv';
+                const mimeType = mode === 'tsv-to-csv' ? 'text/csv' : 'text/tab-separated-values';
+                const filename = 'converted.' + extension;
+                
+                const blob = new Blob([outputText], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                    <div className="lg:flex lg:gap-6">
+                        {/* メインコンテンツ */}
+                        <div className="lg:flex-1 bg-white rounded-lg shadow-lg p-6 md:p-8">
+                        {/* ナビゲーション */}
+                        <div className="mb-4">
+                            <a 
+                                href="/"
+                                className="inline-flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                            >
+                                <svg 
+                                    className="w-5 h-5 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path 
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 19l-7-7 7-7"
+                                    />
+                                </svg>
+                                ツール一覧に戻る
+                            </a>
+                        </div>
+                        
+                        {/* Header */}
+                        <div className="text-center mb-8">
+                            <h1 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800">
+                                TSV ⇄ CSV 変換ツール
+                            </h1>
+
+                            {/* Mode Toggle */}
+                            <div className="flex justify-center mb-8">
+                                <div className="bg-white rounded-xl p-2 shadow-lg border border-gray-200">
+                                    <button
+                                        onClick={() => setMode('tsv-to-csv')}
+                                        className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                                            mode === 'tsv-to-csv'
+                                                ? 'bg-indigo-600 text-white shadow-md transform scale-105'
+                                                : 'text-gray-700 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        TSV → CSV
+                                    </button>
+                                    <button
+                                        onClick={() => setMode('csv-to-tsv')}
+                                        className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                                            mode === 'csv-to-tsv'
+                                                ? 'bg-indigo-600 text-white shadow-md transform scale-105'
+                                                : 'text-gray-700 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        CSV → TSV
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Options */}
+                            {mode === 'csv-to-tsv' && (
+                                <div className="bg-gray-50 rounded-lg p-4 mb-8">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">オプション</h3>
+                                    <div className="flex items-center space-x-3">
+                                        <label className="text-sm font-medium text-gray-900">
+                                            CSV区切り文字:
+                                        </label>
+                                        <select
+                                            value={csvDelimiter}
+                                            onChange={(e) => setCsvDelimiter(e.target.value)}
+                                            className="px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 text-sm"
+                                        >
+                                            <option value=",">カンマ (,)</option>
+                                            <option value=";">セミコロン (;)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Main Content */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* Input Side */}
+                            <div className="bg-gray-50 rounded-xl border border-gray-200 p-8">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                    {mode === 'tsv-to-csv' ? 'TSV入力' : 'CSV入力'}
+                                </h2>
+                                
+                                <div className="flex justify-center space-x-3 mb-4">
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        accept={mode === 'tsv-to-csv' ? '.tsv' : '.csv'}
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                handleFileUpload(file);
+                                            }
+                                        }}
+                                        className="hidden"
+                                    />
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-all duration-200"
+                                    >
+                                        ファイル選択
+                                    </button>
+                                </div>
+                                
+                                <textarea
+                                    value={inputText}
+                                    onChange={(e) => setInputText(e.target.value)}
+                                    placeholder={mode === 'tsv-to-csv' ? 'TSVデータを入力してください...' : 'CSVデータを入力してください...'}
+                                    className="w-full h-80 px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 font-mono text-sm resize-none transition-all"
+                                />
+                                
+                                {error && (
+                                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <p className="text-sm text-red-600 font-medium">
+                                            {error}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Output Side */}
+                            <div className="bg-gray-50 rounded-xl border border-gray-200 p-8">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                    {mode === 'tsv-to-csv' ? 'CSV結果' : 'TSV結果'}
+                                </h2>
+                                
+                                <div className="flex justify-center space-x-3 mb-4">
+                                    <button
+                                        onClick={copyToClipboard}
+                                        disabled={!outputText}
+                                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+                                    >
+                                        コピー
+                                    </button>
+                                    <button
+                                        onClick={downloadFile}
+                                        disabled={!outputText}
+                                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+                                    >
+                                        ダウンロード
+                                    </button>
+                                </div>
+                                
+                                <textarea
+                                    value={outputText}
+                                    readOnly
+                                    placeholder="変換結果がここに表示されます..."
+                                    className="w-full h-80 px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm bg-gray-50 text-gray-900 font-mono text-sm resize-none transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 使い方 */}
+                        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+                            <h2 className="text-lg font-semibold mb-2 text-gray-800">使い方</h2>
+                            <ul className="text-sm text-gray-600 space-y-1">
+                                <li>• TSVとCSVの相互変換が可能です</li>
+                                <li>• ファイルをアップロードまたは直接テキストを入力</li>
+                                <li>• 変換結果をコピーまたはダウンロード可能</li>
+                                <li>• CSV区切り文字（カンマ・セミコロン）を選択可能</li>
+                            </ul>
+                        </div>
+                        </div>
+
+                        {/* サイドバー (デスクトップ) */}
+                        <div className="hidden lg:block w-80 bg-white rounded-lg shadow-lg p-6">
+                            <div className="mb-6">
+                                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                                    🔗 関連ツール
+                                </h2>
+                                <p className="text-sm text-gray-600 mt-1">カテゴリ別に整理されたツール一覧</p>
+                            </div>
+                            <div className="space-y-6">
+                                {/* 計算・変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('calculatorTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🧮 計算・変換</span>
+                                        <svg 
+                                            className={'w-5 h-5 transform transition-transform ' + (expandedCategories.calculatorTools ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.calculatorTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/base-converter/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔢 進数変換（2/8/10/16進数）
+                                            </a>
+                                            <a href="/bytebit/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                💾 バイト⇄ビット換算
+                                            </a>
+                                            <a href="/bitwise-calculator/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                ⚡ AND/OR/XOR演算
+                                            </a>
+                                            <a href="/color/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🎨 カラーコード変換
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* データ変換ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('dataConversion')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🔄 データ変換</span>
+                                        <svg 
+                                            className={'w-5 h-5 transform transition-transform ' + (expandedCategories.dataConversion ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.dataConversion && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 CSV ⇄ JSON
+                                            </a>
+                                            <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔄 YAML ⇄ JSON
+                                            </a>
+                                            <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 Base64変換
+                                            </a>
+                                            <a href="/url/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔗 URLエンコード
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 開発ツール */}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <button 
+                                        onClick={() => toggleCategory('devTools')}
+                                        className="w-full flex items-center justify-between text-lg font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
+                                    >
+                                        <span>🛠️ 開発ツール</span>
+                                        <svg 
+                                            className={'w-5 h-5 transform transition-transform ' + (expandedCategories.devTools ? 'rotate-180' : '')}
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    {expandedCategories.devTools && (
+                                        <div className="mt-3 space-y-2">
+                                            <a href="/regex/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔍 正規表現テスター
+                                            </a>
+                                            <a href="/json/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                📋 JSONフォーマッター
+                                            </a>
+                                            <a href="/password/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔑 ランダムパスワード生成
+                                            </a>
+                                            <a href="/passwordchecker/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-white rounded transition-colors">
+                                                🔐 パスワード強度チェッカー
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 使い方のヒント */}
+                                <div className="bg-blue-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
+                                    <ul className="text-sm text-blue-700 space-y-1">
+                                        <li>• Excelデータの形式変換に</li>
+                                        <li>• データベース間の移行に</li>
+                                        <li>• APIデータの前処理に</li>
+                                        <li>• データ解析の準備作業に</li>
+                                    </ul>
+                                </div>
+
+                                {/* 技術ブログ */}
+                                <div className="bg-indigo-50 rounded-lg p-4">
+                                    <h3 className="text-lg font-semibold text-indigo-800 mb-3">📝 技術ブログ</h3>
+                                    <a 
+                                        href="https://pokoroblog.com/" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center px-3 py-2 text-sm text-indigo-700 hover:bg-indigo-100 rounded transition-colors"
+                                    >
+                                        <span className="mr-2">🌐</span>
+                                        Pokoro Blog
+                                        <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                    <p className="text-xs text-indigo-600 mt-2">プログラミング・技術情報を発信中</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 関連ツール (モバイル) */}
+                    <div className="lg:hidden mt-6">
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 関連ツール</h3>
+                            <p className="text-sm text-gray-600 mb-4">データ変換・処理の便利なツール</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <a href="/csvjson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔄 CSV ⇄ JSON
+                                </a>
+                                <a href="/yamljson/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔄 YAML ⇄ JSON
+                                </a>
+                                <a href="/base64/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    🔐 Base64変換
+                                </a>
+                                <a href="/json/" className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded transition-colors">
+                                    📋 JSONフォーマッター
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Toast Notification */}
+                    {copyMessage && (
+                        <div className="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+                            <div className="flex items-center">
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                {copyMessage}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<TsvCsvConverter />, document.getElementById('root'));
+    </script>
+</body>
+</html>

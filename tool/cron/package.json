@@ -1,0 +1,13 @@
+{
+  "name": "cron-parser-tool",
+  "version": "1.0.0",
+  "description": "Cron式パーサー & 次回実行表示ツール（Cron Expression Parser & Next Execution Display Tool）",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["cron", "parser", "scheduler", "next-execution", "tool"],
+  "author": "",
+  "license": "MIT"
+}

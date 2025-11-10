@@ -1,0 +1,13 @@
+{
+  "name": "tsv-csv-converter-tool",
+  "version": "1.0.0",
+  "description": "TSV ⇄ CSV 変換ツール（TSV ⇄ CSV Converter）",
+  "main": "index.html",
+  "scripts": {
+    "start": "vercel dev",
+    "build": "echo 'No build step needed for static site'"
+  },
+  "keywords": ["tsv", "csv", "converter", "data-conversion", "papaparse", "tool"],
+  "author": "",
+  "license": "MIT"
+}
