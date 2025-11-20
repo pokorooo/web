@@ -72,6 +72,9 @@ body::before {
     z-index: 1000;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
+    /* iOS notch safe area */
+    padding-top: constant(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
 }
 
 .nav-container {
@@ -87,6 +90,13 @@ body::before {
 .nav-logo {
     display: flex;
     align-items: center;
+}
+
+.nav-logo a {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
 }
 
 .nav-logo h2 {
@@ -143,6 +153,7 @@ body::before {
     display: none;
     flex-direction: column;
     cursor: pointer;
+    padding: 10px; /* larger tap target */
 }
 
 .bar {
@@ -246,6 +257,12 @@ body::before {
     backdrop-filter: blur(10px);
     position: relative;
     overflow: hidden;
+}
+
+/* Improve touch behavior */
+.nav-link, .cta-button, .project-link, .hamburger {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .cta-button::before {
@@ -613,6 +630,9 @@ body::before {
 }
 
 @media (max-width: 768px) {
+    body {
+        padding-bottom: calc(70px + env(safe-area-inset-bottom));
+    }
     .hamburger {
         display: flex;
     }
@@ -620,7 +640,7 @@ body::before {
     .nav-menu {
         position: fixed;
         left: -100%;
-        top: 70px;
+        top: calc(70px + env(safe-area-inset-top));
         flex-direction: column;
         background-color: white;
         width: 100%;
@@ -628,6 +648,9 @@ body::before {
         transition: 0.3s;
         box-shadow: 0 10px 27px rgba(0, 0, 0, 0.05);
         padding: 20px 0;
+        max-height: calc(100svh - 70px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        overflow-y: auto;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom));
     }
 
     .nav-menu.active {
@@ -666,6 +689,12 @@ body::before {
     .container {
         padding: 0 15px;
     }
+
+    /* Account for fixed navbar on small screens */
+    .hero {
+        min-height: calc(100svh - 70px);
+        padding-top: 70px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -683,5 +712,68 @@ body::before {
 
     .section-title {
         font-size: 1.8rem;
+    }
+}
+
+/* Mobile Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
+    z-index: 1000;
+    display: none;
+}
+
+.bottom-nav__inner {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    height: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 env(safe-area-inset-left) env(safe-area-inset-bottom) env(safe-area-inset-right);
+}
+
+.bottom-nav__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-decoration: none;
+    color: #666;
+    font-size: 11px;
+}
+
+.bottom-nav__item svg {
+    width: 22px;
+    height: 22px;
+    color: #888;
+}
+
+.bottom-nav__item.active,
+.bottom-nav__item:focus-visible {
+    color: #333;
+}
+
+.bottom-nav__item.active svg {
+    color: #555;
+}
+
+@media (max-width: 768px) {
+    .bottom-nav { display: block; }
+}
+
+/* Reduce motion for users and low-end devices */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
     }
 }

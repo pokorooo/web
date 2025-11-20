@@ -27,6 +27,22 @@
     {
       "source": "/blog/(.*)",
       "destination": "/blog/$1"
+    },
+    {
+      "source": "/app/baseball_order",
+      "destination": "https://webapp-beryl-two.vercel.app/baseball_order"
+    },
+    {
+      "source": "/app/baseball_order/(.*)",
+      "destination": "https://webapp-beryl-two.vercel.app/baseball_order/$1"
+    },
+    {
+      "source": "/baseball_order",
+      "destination": "https://webapp-beryl-two.vercel.app/baseball_order"
+    },
+    {
+      "source": "/baseball_order/(.*)",
+      "destination": "https://webapp-beryl-two.vercel.app/baseball_order/$1"
     }
   ],
   "headers": [

@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/baseball_order$", "dest": "/baseball_order/index.html" },
+    { "src": "/baseball_order/(.*)", "dest": "/baseball_order/index.html" }
+  ]
+}

@@ -3,9 +3,12 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "BASE_PATH=/baseball_order/ vite build && rm -rf ../public/baseball_order && mkdir -p ../public/baseball_order && cp -R dist/* ../public/baseball_order/ && cp -f ../index.html ../public/index.html",
     "preview": "vite preview"
   },
   "dependencies": {

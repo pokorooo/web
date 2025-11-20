@@ -1,11 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const hamburger = document.querySelector('.hamburger');
     const navMenu = document.querySelector('.nav-menu');
     const navLinks = document.querySelectorAll('.nav-link');
 
     hamburger.addEventListener('click', function() {
-        hamburger.classList.toggle('active');
+        const expanded = hamburger.classList.toggle('active');
         navMenu.classList.toggle('active');
+        hamburger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
     });
 
     navLinks.forEach(link => {
@@ -51,10 +55,13 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const target = document.querySelector(this.getAttribute('href'));
             if (target) {
-                const offsetTop = target.offsetTop - 70;
+                const navbar = document.querySelector('.navbar');
+                const offset = navbar ? navbar.offsetHeight : 70;
+                const rectTop = target.getBoundingClientRect().top + window.pageYOffset;
+                const offsetTop = rectTop - offset;
                 window.scrollTo({
                     top: offsetTop,
-                    behavior: 'smooth'
+                    behavior: reduceMotion ? 'auto' : 'smooth'
                 });
             }
         });
@@ -67,18 +74,20 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     const projectCards = document.querySelectorAll('.project-card');
-    projectCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-10px) scale(1.02)';
+    if (!isTouch) {
+        projectCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-10px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
         });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-        });
-    });
+    }
 
     const ctaButton = document.querySelector('.cta-button');
-    if (ctaButton) {
+    if (ctaButton && !reduceMotion) {
         ctaButton.addEventListener('mouseenter', function() {
             this.style.animation = 'pulse 0.6s ease-in-out';
         });
@@ -123,15 +132,40 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
 
-    window.addEventListener('scroll', function() {
-        const scrolled = window.pageYOffset;
-        const parallaxElements = document.querySelectorAll('.hero');
-        
-        parallaxElements.forEach(element => {
-            const speed = 0.5;
-            element.style.transform = `translateY(${scrolled * speed}px)`;
+    if (!isMobile && !reduceMotion) {
+        window.addEventListener('scroll', function() {
+            const scrolled = window.pageYOffset;
+            const parallaxElements = document.querySelectorAll('.hero');
+            
+            parallaxElements.forEach(element => {
+                const speed = 0.5;
+                element.style.transform = `translateY(${scrolled * speed}px)`;
+            });
         });
-    });
+    }
+
+    // Bottom nav active state
+    (function setBottomNavActive(){
+        const items = document.querySelectorAll('.bottom-nav__item');
+        if (!items.length) return;
+        const path = location.pathname + location.hash;
+        items.forEach(a => a.classList.remove('active'));
+        const matchers = [
+            {key: 'home', test: () => location.pathname === '/' || /portfolio\.html$/.test(location.pathname)},
+            {key: 'tools', test: () => location.pathname.startsWith('/tool')},
+            {key: 'games', test: () => location.pathname.startsWith('/game')},
+            {key: 'webapps', test: () => /#webapps$/.test(path)},
+            {key: 'blog', test: () => location.hostname.indexOf('pokoroblog.com') !== -1}
+        ];
+        const current = matchers.find(m => m.test());
+        if (current) {
+            const el = document.querySelector(`.bottom-nav__item[data-route="${current.key}"]`);
+            if (el) el.classList.add('active');
+        } else {
+            const el = document.querySelector('.bottom-nav__item[data-route="home"]');
+            if (el) el.classList.add('active');
+        }
+    })();
 
     const typeWriter = (element, text, delay = 100) => {
         let i = 0;
@@ -148,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     const heroTitle = document.querySelector('.hero-title');
-    if (heroTitle) {
+    if (heroTitle && !reduceMotion) {
         const originalText = heroTitle.textContent;
         setTimeout(() => {
             typeWriter(heroTitle, originalText, 80);
@@ -161,7 +195,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!particleContainer) return;
 
         // Create multiple particles
-        for (let i = 0; i < 20; i++) {
+        const count = isMobile ? 8 : 20;
+        for (let i = 0; i < (reduceMotion ? 0 : count); i++) {
             const particle = document.createElement('div');
             particle.className = 'particle';
             
@@ -251,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add glitch effect on hero title hover
     const heroTitleElement = document.querySelector('.hero-title');
-    if (heroTitleElement) {
+    if (heroTitleElement && !reduceMotion) {
         heroTitleElement.addEventListener('mouseenter', () => {
             heroTitleElement.classList.add('glitch');
             setTimeout(() => heroTitleElement.classList.remove('glitch'), 300);
@@ -259,50 +294,52 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Animate project cards on scroll
-    const projectCards = document.querySelectorAll('.project-card');
-    projectCards.forEach((card, index) => {
-        card.style.animationDelay = `${index * 0.2}s`;
+    const projectCards2 = document.querySelectorAll('.project-card');
+    projectCards2.forEach((card, index) => {
+        card.style.animationDelay = reduceMotion ? '0s' : `${index * 0.2}s`;
     });
 
     // Advanced cursor trail effect
     let mouseTrail = [];
     const maxTrailLength = 20;
 
-    document.addEventListener('mousemove', (e) => {
-        mouseTrail.push({ x: e.clientX, y: e.clientY, time: Date.now() });
-        
-        if (mouseTrail.length > maxTrailLength) {
-            mouseTrail.shift();
-        }
+    if (!isTouch && !reduceMotion) {
+        document.addEventListener('mousemove', (e) => {
+            mouseTrail.push({ x: e.clientX, y: e.clientY, time: Date.now() });
+            
+            if (mouseTrail.length > maxTrailLength) {
+                mouseTrail.shift();
+            }
 
-        // Remove old trail elements
-        const oldTrails = document.querySelectorAll('.mouse-trail');
-        oldTrails.forEach(trail => {
-            if (Date.now() - trail.dataset.time > 500) {
-                trail.remove();
+            // Remove old trail elements
+            const oldTrails = document.querySelectorAll('.mouse-trail');
+            oldTrails.forEach(trail => {
+                if (Date.now() - trail.dataset.time > 500) {
+                    trail.remove();
+                }
+            });
+
+            // Create new trail element
+            if (mouseTrail.length > 1) {
+                const trail = document.createElement('div');
+                trail.className = 'mouse-trail';
+                trail.dataset.time = Date.now();
+                trail.style.cssText = `
+                    position: fixed;
+                    width: 6px;
+                    height: 6px;
+                    background: radial-gradient(circle, rgba(102, 126, 234, 0.8) 0%, transparent 70%);
+                    border-radius: 50%;
+                    pointer-events: none;
+                    z-index: 9999;
+                    left: ${e.clientX - 3}px;
+                    top: ${e.clientY - 3}px;
+                    animation: trailFade 0.5s ease-out forwards;
+                `;
+                document.body.appendChild(trail);
             }
         });
-
-        // Create new trail element
-        if (mouseTrail.length > 1) {
-            const trail = document.createElement('div');
-            trail.className = 'mouse-trail';
-            trail.dataset.time = Date.now();
-            trail.style.cssText = `
-                position: fixed;
-                width: 6px;
-                height: 6px;
-                background: radial-gradient(circle, rgba(102, 126, 234, 0.8) 0%, transparent 70%);
-                border-radius: 50%;
-                pointer-events: none;
-                z-index: 9999;
-                left: ${e.clientX - 3}px;
-                top: ${e.clientY - 3}px;
-                animation: trailFade 0.5s ease-out forwards;
-            `;
-            document.body.appendChild(trail);
-        }
-    });
+    }
 
     const trailStyle = document.createElement('style');
     trailStyle.textContent = `
@@ -313,3 +350,14 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(trailStyle);
 });
+    // Force same-tab behavior just in case some anchors still have target
+    document.querySelectorAll('a[target="_blank"]').forEach(a => a.removeAttribute('target'));
+    document.addEventListener('click', (e) => {
+        const a = e.target.closest('a');
+        if (!a) return;
+        if (a.getAttribute('target') === '_blank') {
+            e.preventDefault();
+            a.removeAttribute('target');
+            window.location.href = a.href;
+        }
+    }, { capture: true });

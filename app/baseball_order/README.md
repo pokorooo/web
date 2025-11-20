@@ -16,6 +16,24 @@ npm install
 npm run dev
 ```
 
+## デプロイ（Vercel）
+
+1. Vercel で New Project
+   - Root Directory: `app/baseball_order`
+   - Framework Preset: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Node.js: 18 以上（package.json の engines に記載）
+
+2. または Vercel CLI で
+   ```bash
+   npm i -g vercel
+   vercel   # 初回リンク設定
+   vercel --prod
+   ```
+
+3. 生成された URL をポートフォリオの「Webアプリ → 野球スタメンメーカー」の「ライブデモ」に設定してください。
+
 ## 主な機能
 
 - フォームモード: 打順・選手名・守備位置を表形式で編集、行の並び替え対応
