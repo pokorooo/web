@@ -44,6 +44,16 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Safe area bottom padding for fixed mobile bars */
+.pb-safe-bottom {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+
+/* Mobile bottom action bar shadow helper */
+.shadow-top-soft {
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
+}
+
 .drag-handle {
   @apply cursor-grab select-none text-blue-900 inline-flex items-center justify-center rounded;
 }

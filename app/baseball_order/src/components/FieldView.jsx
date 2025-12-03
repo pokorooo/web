@@ -5,7 +5,7 @@ function findPlayerByPosition(players, position) {
   return players.find(p => p.position === position)
 }
 
-export default function FieldView({ team, manager, players, setPlayers, bench = [], setBench, pitcher }) {
+export default function FieldView({ team, opponent, opponentManager = '', manager, players, setPlayers, bench = [], setBench, pitcher, showOpponent = false, opponentPlayers = [], opponentPitcher = { name: '' }, readOnly = false }) {
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result
     if (!destination) return
@@ -70,17 +70,51 @@ export default function FieldView({ team, manager, players, setPlayers, bench = 
   const benchExtras = (bench || []).filter(b => !b.position)
   const benchPlayers = [...benchExtras, ...benchLineup]
 
+  const normalize = (arr = []) => {
+    const byOrder = new Map(arr.map(p => [p.order, p]))
+    return Array.from({ length: 9 }, (_, i) => {
+      const o = i + 1
+      const p = byOrder.get(o) || {}
+      return { order: o, name: p.name || '', position: p.position || '-' }
+    })
+  }
+  const selfRows = normalize(players)
+  const oppRows = normalize(opponentPlayers || [])
+
   return (
-    <div className="grid md:grid-cols-3 gap-4">
-      <div className="md:col-span-2 card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="text-xl font-bold text-blue-900">{team || 'チーム名未設定'}</h2>
-            <p className="text-sm text-blue-800">監督: {manager || '-'}</p>
+    <div className={`grid gap-4 md:grid-cols-3`}>
+      {/* Left sidebar: compact lineup */}
+      <div className="card p-3 hidden md:flex md:flex-col h-full overflow-auto">
+        <h3 className="text-sm font-semibold text-blue-900 mb-2">打順</h3>
+        <ol className="divide-y">
+          {players.map(p => (
+            <li key={p.id} className="grid grid-cols-[1.5rem_1fr_2rem] items-center h-7 text-xs">
+              <span className="text-blue-900 text-center tabular-nums">{p.order}.</span>
+              <span className="text-blue-900 truncate">{p.name || `選手 ${p.order}`}</span>
+              <span className="text-blue-700 text-right tabular-nums">{p.position || '-'}</span>
+            </li>
+          ))}
+          <li className="grid grid-cols-[1.5rem_1fr_2rem] items-center h-7 text-xs">
+            <span className="text-blue-900 text-center">P</span>
+            <span className="text-blue-900 truncate">{pitcher?.name || '-'}</span>
+            <span className="text-blue-700 text-right tabular-nums">P</span>
+          </li>
+        </ol>
+      </div>
+
+      {/* Right area: header + field (+ bench when editable) */}
+      <div className="md:col-span-2 flex flex-col gap-4">
+        <div className="card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-xl font-bold text-blue-900 flex flex-wrap items-baseline gap-x-2">
+                <span>{team || 'チーム名未設定'}</span>
+              </h2>
+              <p className="text-sm text-blue-800">監督: {manager || '-'}</p>
+            </div>
           </div>
-        </div>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <div className="relative w-full aspect-square rounded-xl overflow-hidden border-4 border-red-400 bg-green-200 touch-none">
+          <DragDropContext onDragEnd={readOnly ? () => {} : onDragEnd}>
+          <div className="relative w-full aspect-square rounded-xl overflow-hidden border-4 border-red-400 bg-green-200 touch-none select-none">
             {/* SVG Field Illustration (MLB style) */}
             <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full pointer-events-none" shapeRendering="crispEdges">
               <defs>
@@ -224,6 +258,7 @@ export default function FieldView({ team, manager, players, setPlayers, bench = 
 
           </div>
           {/* Bench droppable outside the field */}
+          {!readOnly && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-1">
               <div className="text-xs text-blue-900">ベンチ（控え＋未配置）</div>
@@ -283,19 +318,9 @@ export default function FieldView({ team, manager, players, setPlayers, bench = 
               )}
             </Droppable>
           </div>
+          )}
         </DragDropContext>
-      </div>
-
-      <div className="card p-4">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">打順</h3>
-        <ol className="space-y-1">
-          {players.map(p => (
-            <li key={p.id} className="flex items-center justify-between py-1 border-b last:border-b-0">
-              <span className="text-blue-900">{p.order}. {p.name || `選手 ${p.order}`}</span>
-              <span className="text-blue-700 text-sm">{p.position || '-'}</span>
-            </li>
-          ))}
-        </ol>
+        </div>
       </div>
     </div>
   )

@@ -30,19 +30,19 @@
     },
     {
       "source": "/app/baseball_order",
-      "destination": "https://webapp-beryl-two.vercel.app/baseball_order"
+      "destination": "/app/public/baseball_order/index.html"
     },
     {
       "source": "/app/baseball_order/(.*)",
-      "destination": "https://webapp-beryl-two.vercel.app/baseball_order/$1"
+      "destination": "/app/public/baseball_order/$1"
     },
     {
       "source": "/baseball_order",
-      "destination": "https://webapp-beryl-two.vercel.app/baseball_order"
+      "destination": "/app/public/baseball_order/index.html"
     },
     {
       "source": "/baseball_order/(.*)",
-      "destination": "https://webapp-beryl-two.vercel.app/baseball_order/$1"
+      "destination": "/app/public/baseball_order/$1"
     }
   ],
   "headers": [
