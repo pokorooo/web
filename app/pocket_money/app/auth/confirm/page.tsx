@@ -23,8 +23,9 @@ export default function AuthConfirmPage() {
         const code = url.searchParams.get('code')
 
         if (code) {
-          // コードはサーバーで交換して Cookie を設定
-          location.replace(`/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`)
+          // コードはサーバーで交換して Cookie を設定（basePath対応）
+          const base = (process.env.NEXT_PUBLIC_BASE_PATH || '')
+          location.replace(`${base}/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`)
           return
         }
 

@@ -1,0 +1,15 @@
+.next/
+node_modules/
+*.log
+.DS_Store
+coverage/
+dist/
+build/
+out/
+.env
+.env.*
+!.env.example
+**/__tests__/**
+**/*.test.*
+**/*.spec.*
+

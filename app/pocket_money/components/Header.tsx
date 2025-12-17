@@ -12,7 +12,8 @@ export default function HeaderActions() {
       await supabase.auth.signOut()
     } catch {}
     // Clear SSR cookies as well
-    location.href = '/auth/signout'
+    const base = (process.env.NEXT_PUBLIC_BASE_PATH || '')
+    window.location.href = `${base}/auth/signout`
   }
   return (
     <button onClick={signOut} className="btn-outline text-sm">ログアウト</button>

@@ -21,7 +21,8 @@ export default function LoginPage() {
     if (hasCode || hash.includes('access_token') || hash.includes('refresh_token')) {
       const q = window.location.search || ''
       const h = window.location.hash || ''
-      window.location.replace(`/auth/confirm${q}${h}`)
+      const base = (process.env.NEXT_PUBLIC_BASE_PATH || '')
+      window.location.replace(`${base}/auth/confirm${q}${h}`)
     }
   }, [])
 
@@ -37,8 +38,9 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     const supabase = supabaseBrowser()
-    // コードはサーバー側 /auth/callback で交換し Cookie を確実にセット
-    const redirectTo = `${location.origin}/auth/callback?next=/dashboard`
+    // basePath 配下で動く場合に対応
+    const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
+    const redirectTo = `${location.origin}${base}/auth/callback?next=${encodeURIComponent(`${base}/dashboard`)}`
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } })
     if (error) setError(error.message)
     else setSent(true)
@@ -60,7 +62,8 @@ export default function LoginPage() {
           body: JSON.stringify({ access_token: session.access_token, refresh_token: session.refresh_token }),
         }).catch(() => {})
       }
-      location.href = '/dashboard'
+      // basePath 対応のため router を使用
+      router.replace('/dashboard')
     } catch (err: any) {
       setPwError(err?.message ?? 'ログインに失敗しました')
     }
