@@ -3,6 +3,7 @@ import HeaderActions from '../../components/Header'
 import Link from 'next/link'
 import { supabaseServer } from '../../lib/supabaseServer'
 import { currency, ym } from '../../lib/utils'
+import { computePayDate, nextScheduledPayDate, ymd } from '../../lib/payday'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -29,6 +30,13 @@ async function fetchData() {
 export default async function DashboardPage({ searchParams }: { searchParams?: { range?: string } }) {
   const data = await fetchData()
   if (!data) redirect('/login')
+  const meta: any = (data.user as any)?.user_metadata || {}
+  const payDay = Math.max(1, Math.min(28, Number((data.profile as any)?.pay_day ?? meta?.pay_day ?? 25)))
+  const payShift = (['none','backward','forward'].includes((data.profile as any)?.pay_shift ?? meta?.pay_shift)
+    ? ((data.profile as any)?.pay_shift ?? meta?.pay_shift)
+    : 'backward') as any
+  const scheduled = computePayDate(data.y, data.m, payDay, payShift)
+  const upcoming = nextScheduledPayDate(new Date(), payDay, payShift)
   const range = (searchParams?.range === 'rolling' || searchParams?.range === 'half') ? searchParams?.range : 'year'
   // Build months to display according to range mode
   const months: Array<{ y: number; m: number }> = []
@@ -125,6 +133,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
         <h1 className="text-xl font-bold">ダッシュボード</h1>
         <HeaderActions />
       </div>
+      <p className="mb-3 text-sm text-gray-600">今月の予定支給日: <b>{ymd(scheduled)}</b> ／ 次回予定: <b>{ymd(upcoming)}</b></p>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="card">
           <h2 className="mb-2 font-semibold">あなたの設定</h2>

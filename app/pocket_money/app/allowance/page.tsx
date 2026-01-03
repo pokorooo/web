@@ -3,6 +3,7 @@ import HeaderActions from '../../components/Header'
 export const dynamic = 'force-dynamic'
 import { supabaseServer } from '../../lib/supabaseServer'
 import { currency, ym } from '../../lib/utils'
+import { computePayDate, nextScheduledPayDate, ymd } from '../../lib/payday'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -57,6 +58,13 @@ export default async function AllowancePage() {
   if (!user) redirect('/login')
   const { y, m } = ym()
   const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single()
+  const meta: any = (user as any)?.user_metadata || {}
+  const payDay = Math.max(1, Math.min(28, Number((profile as any)?.pay_day ?? meta?.pay_day ?? 25)))
+  const payShift = (['none','backward','forward'].includes((profile as any)?.pay_shift ?? meta?.pay_shift)
+    ? ((profile as any)?.pay_shift ?? meta?.pay_shift)
+    : 'backward') as any
+  const scheduled = computePayDate(y, m, payDay, payShift)
+  const upcoming = nextScheduledPayDate(new Date(), payDay, payShift)
   const { data: allowance } = await supabase.from('monthly_allowance').select('*').eq('user_id', user?.id).eq('year', y).eq('month', m).maybeSingle()
   return (
     <div>
@@ -65,6 +73,36 @@ export default async function AllowancePage() {
         <HeaderActions />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
+        <form action={async (formData: FormData) => {
+          'use server'
+          const supabase = supabaseServer()
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) return
+          const day = Math.max(1, Math.min(28, Number(formData.get('pay_day') || 25)))
+          const rule = String(formData.get('shift_rule') || 'backward')
+          // Best-effort: store in profile table if columns exist
+          try {
+            await supabase.from('users').upsert({ id: user.id, pay_day: day, pay_shift: rule }, { onConflict: 'id' })
+          } catch {}
+          // Always store in Auth user metadata as fallback (no schema change required)
+          try {
+            await supabase.auth.updateUser({ data: { pay_day: day, pay_shift: rule } as any })
+          } catch {}
+          revalidatePath('/allowance')
+          revalidatePath('/dashboard')
+        }} className="card space-y-3">
+          <h2 className="font-semibold">支給日の自動設定</h2>
+          <label className="label">支給日（毎月）</label>
+          <input name="pay_day" type="number" min={1} max={28} className="input" defaultValue={payDay} />
+          <label className="label">休日のずらし方</label>
+          <select name="shift_rule" className="input" defaultValue={payShift}>
+            <option value="none">そのまま（ずらさない）</option>
+            <option value="backward">前倒し（直前の平日）</option>
+            <option value="forward">後ろ倒し（直後の平日）</option>
+          </select>
+          <p className="text-xs text-gray-500">土日を休日として扱います。今月の予定: <b>{ymd(scheduled)}</b> ／ 次回予定: <b>{ymd(upcoming)}</b></p>
+          <button className="btn w-full">保存</button>
+        </form>
         <form action={updateMonthly} className="card space-y-3">
           <h2 className="font-semibold">月額お小遣いの設定</h2>
           <input name="monthly" type="number" className="input" defaultValue={profile?.monthly_allowance ?? 30000} />
@@ -72,6 +110,7 @@ export default async function AllowancePage() {
         </form>
         <div className="card space-y-2">
           <h2 className="mb-2 font-semibold">今月</h2>
+          <p className="text-sm text-gray-600">今月の予定支給日: <b>{ymd(scheduled)}</b></p>
           {allowance ? (
             <>
               <p>支給額: {currency(allowance.amount_given)} / ステータス: <b>{allowance.status}</b></p>
