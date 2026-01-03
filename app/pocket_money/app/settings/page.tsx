@@ -1,5 +1,6 @@
 // app/settings/page.tsx - Settings page (monthly allowance, public)
 import HeaderActions from '../../components/Header'
+export const dynamic = 'force-dynamic'
 import { supabaseServer } from '../../lib/supabaseServer'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -9,12 +10,9 @@ async function saveSettings(formData: FormData) {
   const supabase = supabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
-  let monthly = Number(formData.get('monthly'))
-  if (!Number.isFinite(monthly)) monthly = 0
-  monthly = Math.max(0, Math.min(1_000_000, Math.floor(monthly)))
   const publicView = formData.get('public') === 'on'
-  // ユーザー行が存在しないケースに備え upsert
-  await supabase.from('users').upsert({ id: user.id, monthly_allowance: monthly, public_view: publicView }, { onConflict: 'id' })
+  // 月額はお小遣いタブで編集するため、ここでは公開設定のみ更新
+  await supabase.from('users').upsert({ id: user.id, public_view: publicView }, { onConflict: 'id' })
   revalidatePath('/settings')
   revalidatePath('/dashboard')
 }
@@ -60,8 +58,7 @@ export default async function SettingsPage() {
       </div>
 
       <form action={saveSettings} className="card max-w-md space-y-3">
-        <label className="label">月額お小遣い（円）</label>
-        <input name="monthly" type="number" className="input" defaultValue={profile?.monthly_allowance ?? 30000} />
+        <h2 className="font-semibold">公開設定</h2>
         <label className="inline-flex items-center gap-2 text-sm">
           <input name="public" type="checkbox" defaultChecked={!!profile?.public_view} /> 履歴を相手に公開
         </label>

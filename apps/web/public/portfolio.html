@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <meta name='impact-site-verification' value='f1c4e876-2d17-42cd-8557-505a3e01569e'>
+    <title>ポートフォリオ | pokoro</title>
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/axu8HkAAAAASUVORK5CYII=" type="image/png">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q3F3DJ865S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-Q3F3DJ865S');
+    </script>
+    <link rel="stylesheet" href="portfolio-styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="/" aria-label="トップページへ戻る" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
+                    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAQAAABi6S8dAAAALklEQVR42mNgGAUMDQwM/8+fP0YwQGQ0GJgY0A0j4v//PwYGBqYgQ4iAAACQ1gCkKk1o5wAAAABJRU5ErkJggg==" alt="pokoro" style="width: 32px; height: 32px; margin-right: 10px;">
+                    <h2>pokoro</h2>
+                </a>
+            </div>
+            <ul id="nav-menu" class="nav-menu">
+                <li class="nav-item">
+                    <a href="/tools" class="nav-link">ツール</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/games" class="nav-link">ゲーム</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/pocket_money" class="nav-link">お小遣い管理</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#webapps" class="nav-link">Webアプリ</a>
+                </li>
+                <li class="nav-item">
+                    <a href="https://pokoroblog.com/" class="nav-link">ブログ</a>
+                </li>
+            </ul>
+            <div class="hamburger" role="button" aria-label="メニューを開閉" aria-expanded="false" aria-controls="nav-menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">pokoro</h1>
+            <p class="hero-subtitle">フルスタックエンジニア | Webアプリケーション開発者</p>
+            <a href="#projects" class="cta-button">プロジェクトを見る</a>
+        </div>
+        <div class="floating-particles"></div>
+    </section>
+
+    <section id="about" class="about">
+        <div class="container">
+            <h2 class="section-title">自己紹介</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p>
+                        こんにちは！私はフルスタックエンジニアのpokoroです。
+                        Web開発に情熱を持ち、ユーザーに価値を提供する
+                        アプリケーションの開発に取り組んでいます。
+                    </p>
+                    <p>
+                        フロントエンドからバックエンドまで幅広い技術スタックを扱い、
+                        常に新しい技術の習得に努めています。
+                        チームワークを重視し、効率的な開発プロセスを追求しています。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="skills" class="skills">
+        <div class="container">
+            <h2 class="section-title">スキル</h2>
+            <div class="skills-grid">
+                <div class="skill-category">
+                    <h3>フロントエンド</h3>
+                    <ul class="skill-list">
+                        <li>HTML5 / CSS3</li>
+                        <li>JavaScript (ES6+)</li>
+                        <li>React.js</li>
+                        <li>TypeScript</li>
+                        <li>レスポンシブデザイン</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>バックエンド</h3>
+                    <ul class="skill-list">
+                        <li>Node.js</li>
+                        <li>Python</li>
+                        <li>Express.js</li>
+                        <li>REST API設計</li>
+                        <li>データベース設計</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>その他</h3>
+                    <ul class="skill-list">
+                        <li>Git / GitHub</li>
+                        <li>Docker</li>
+                        <li>AWS基礎</li>
+                        <li>アジャイル開発</li>
+                        <li>テスト駆動開発</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="projects" class="projects">
+        <div class="container">
+            <h2 class="section-title">プロジェクト</h2>
+            <div class="projects-grid">
+                <div class="project-card">
+                    <h3>Webツール開発</h3>
+                    <p class="project-description">
+                        日常業務で使える実用的なWebツールを開発。
+                        JSON整形、Base64エンコード、QRコード生成、文字数カウント、正規表現テスター、画像リサイザーなど多数のツールを提供。
+                    </p>
+                    <div class="project-tech">
+                        <span class="tech-tag">HTML</span>
+                        <span class="tech-tag">CSS</span>
+                        <span class="tech-tag">JavaScript</span>
+                        <span class="tech-tag">Node.js</span>
+                    </div>
+                    <div class="project-links">
+                        <a href="/tools" class="project-link">ライブデモ</a>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <h3>Game開発</h3>
+                    <p class="project-description">
+                        様々なブラウザゲームを開発。
+                        React.jsを使用したクロスワードパズル、Python(Flask)による数独アプリなど、インタラクティブなゲーム体験を提供。
+                    </p>
+                    <div class="project-tech">
+                        <span class="tech-tag">React</span>
+                        <span class="tech-tag">Python</span>
+                        <span class="tech-tag">Flask</span>
+                        <span class="tech-tag">JavaScript</span>
+                    </div>
+                    <div class="project-links">
+                        <a href="/games" class="project-link">ライブデモ</a>
+                    </div>
+                </div>
+
+                
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Web Apps Section -->
+    <section id="webapps" class="projects">
+        <div class="container">
+            <h2 class="section-title">Webアプリ</h2>
+            <div class="projects-grid">
+                <!-- Web App Card Template: 複製して増やせます -->
+                <div class="project-card">
+                    <h3>野球スタメンメーカー</h3>
+                    <p class="project-description">
+                        打順と守備位置をドラッグ＆ドロップで直感的に編集できる、野球のスタメン作成アプリ。
+                        フォーム入力と野球場ビューを切り替えて編集でき、画像保存やローカル保存にも対応。
+                    </p>
+                    <div class="project-tech">
+                        <span class="tech-tag">React</span>
+                        <span class="tech-tag">Vite</span>
+                        <span class="tech-tag">Tailwind</span>
+                        <span class="tech-tag">DnD</span>
+                    </div>
+                    <div class="project-links">
+                        <!-- デプロイURLに差し替えてください -->
+                        <a href="/baseball_order/" class="project-link">ライブデモ</a>
+                        <a href="/app/baseball_order/" class="project-link">ソース</a>
+                    </div>
+                </div>
+                <div class="project-card">
+                    <h3>お小遣い管理</h3>
+                    <p class="project-description">
+                        夫婦のお小遣い支給と前借り（返済）を簡単に管理できるWebアプリ。月ごとの支給状況チェックや自動控除をサポート。
+                    </p>
+                    <div class="project-tech">
+                        <span class="tech-tag">Next.js</span>
+                        <span class="tech-tag">Supabase</span>
+                        <span class="tech-tag">TypeScript</span>
+                        <span class="tech-tag">Tailwind</span>
+                    </div>
+                    <div class="project-links">
+                        <!-- デプロイURLに差し替えてください（サブドメイン推奨: pocket.pokoro.tech など） -->
+                        <a href="/pocket_money" class="project-link">ライブデモ</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 pokoro. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav" role="navigation" aria-label="モバイルボトムナビ">
+        <div class="bottom-nav__inner">
+            <a href="/" class="bottom-nav__item" data-route="home" aria-label="ホーム">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V9.5z"/></svg>
+                ホーム
+            </a>
+            <a href="/tools" class="bottom-nav__item" data-route="tools" aria-label="ツール">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7l3-7z"/></svg>
+                ツール
+            </a>
+            <a href="/games" class="bottom-nav__item" data-route="games" aria-label="ゲーム">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15H4a3 3 0 0 1-3-3V9a5 5 0 0 1 5-5h12a5 5 0 0 1 5 5v3a3 3 0 0 1-3 3h-2"/><circle cx="8" cy="13" r="1"/><circle cx="16" cy="11" r="1"/></svg>
+                ゲーム
+            </a>
+            <a href="/pocket_money" class="bottom-nav__item" data-route="pocket" aria-label="お小遣い管理">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h13a4 4 0 0 1 4 4v2a4 4 0 0 1-4 4H3z"/><path d="M16 11h4"/></svg>
+                お小遣い
+            </a>
+            <a href="/#webapps" class="bottom-nav__item" data-route="webapps" aria-label="Webアプリ">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 8h18"/></svg>
+                Webアプリ
+            </a>
+            <a href="https://pokoroblog.com/" class="bottom-nav__item" data-route="blog" aria-label="ブログ">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h6M8 16h10"/></svg>
+                ブログ
+            </a>
+        </div>
+    </nav>
+
+    <script src="portfolio-script.js"></script>
+</body>
+</html>

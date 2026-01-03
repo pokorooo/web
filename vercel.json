@@ -6,11 +6,11 @@
     },
     {
       "source": "/pocket_money",
-      "destination": "https://pocket-money-example.vercel.app/pocket_money" 
+      "destination": "https://pocketmoney-five.vercel.app/pocket_money"
     },
     {
       "source": "/pocket_money/(.*)",
-      "destination": "https://pocket-money-example.vercel.app/pocket_money/$1"
+      "destination": "https://pocketmoney-five.vercel.app/pocket_money/$1"
     },
     {
       "source": "/tool",

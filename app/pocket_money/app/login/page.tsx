@@ -13,25 +13,39 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [pwError, setPwError] = useState<string | null>(null)
 
-  // もしメールリンクで /login に戻ってきた場合は /auth/confirm に転送
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const hasCode = new URLSearchParams(window.location.search).get('code')
-    const hash = window.location.hash || ''
-    if (hasCode || hash.includes('access_token') || hash.includes('refresh_token')) {
-      const q = window.location.search || ''
-      const h = window.location.hash || ''
-      const base = (process.env.NEXT_PUBLIC_BASE_PATH || '')
-      window.location.replace(`${base}/auth/confirm${q}${h}`)
-    }
-  }, [])
-
-  // 既にサインイン済みなら /dashboard へ
+  // SSR Cookie 同期後のみ /dashboard へ遷移（無限リダイレクト防止）
   useEffect(() => {
     const supabase = supabaseBrowser()
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) router.replace('/dashboard')
+    const base = (process.env.NEXT_PUBLIC_BASE_PATH || '')
+    const origin = process.env.NEXT_PUBLIC_SITE_ORIGIN || 'https://www.pokoro.tech'
+    let cancelled = false
+
+    const syncAndGo = async (access_token?: string, refresh_token?: string) => {
+      if (!access_token) return
+      try {
+        await fetch(`${origin}${base}/auth/set`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ access_token, refresh_token }),
+        })
+        if (!cancelled) window.location.replace(`${base}/dashboard`)
+      } catch {}
+    }
+
+    // 既存セッションがあれば自動ログイン（SSR Cookie 同期のうえで遷移）
+    supabase.auth.getSession().then(({ data }) => {
+      const s = data.session
+      if (s) syncAndGo(s.access_token, s.refresh_token ?? undefined)
     })
+
+    // ログイン完了イベントにも反応
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        syncAndGo(session.access_token, session.refresh_token ?? undefined)
+      }
+    })
+
+    return () => { cancelled = true; sub.subscription.unsubscribe() }
   }, [])
 
   const sendLink = async (e: React.FormEvent) => {
@@ -40,7 +54,9 @@ export default function LoginPage() {
     const supabase = supabaseBrowser()
     // basePath 配下で動く場合に対応
     const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
-    const redirectTo = `${location.origin}${base}/auth/callback?next=${encodeURIComponent(`${base}/dashboard`)}`
+    const origin = process.env.NEXT_PUBLIC_SITE_ORIGIN || 'https://www.pokoro.tech'
+    // next は basePath を含めず '/dashboard' 固定にする（二重付与防止）
+    const redirectTo = `${origin}${base}/auth/callback?next=${encodeURIComponent('/dashboard')}`
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } })
     if (error) setError(error.message)
     else setSent(true)
@@ -56,7 +72,9 @@ export default function LoginPage() {
       // SSR Cookie 同期（ダッシュボードがSSRでユーザー認識できるように）
       const session = data.session
       if (session) {
-        await fetch('/auth/set', {
+        const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
+        const origin = process.env.NEXT_PUBLIC_SITE_ORIGIN || 'https://www.pokoro.tech'
+        await fetch(`${origin}${base}/auth/set`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ access_token: session.access_token, refresh_token: session.refresh_token }),

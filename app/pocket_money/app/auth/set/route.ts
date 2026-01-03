@@ -7,7 +7,9 @@ export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin') || ''
   const url = new URL(request.url)
   const expectedOrigin = `${url.protocol}//${url.host}`
-  if (!origin || origin !== expectedOrigin) {
+  const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN || expectedOrigin
+  const allowed = new Set([expectedOrigin, siteOrigin])
+  if (!origin || !allowed.has(origin)) {
     return NextResponse.json({ ok: false, message: 'Invalid origin' }, { status: 400 })
   }
 
@@ -25,11 +27,14 @@ export async function POST(request: NextRequest) {
   const { access_token, refresh_token } = body || {}
   const res = NextResponse.json({ ok: true })
 
+  const cookieDomain = new URL(siteOrigin).hostname
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get: (name: string) => request.cookies.get(name)?.value,
-      set: (name: string, value: string, options: any) => res.cookies.set(name, value, options),
-      remove: (name: string, options: any) => res.cookies.set(name, '', options),
+      set: (name: string, value: string, options: any) =>
+        res.cookies.set(name, value, { ...options, domain: cookieDomain }),
+      remove: (name: string, options: any) =>
+        res.cookies.set(name, '', { ...options, domain: cookieDomain }),
     },
   })
 

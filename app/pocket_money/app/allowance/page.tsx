@@ -1,5 +1,6 @@
 // app/allowance/page.tsx - Give monthly allowance with auto-deduct
 import HeaderActions from '../../components/Header'
+export const dynamic = 'force-dynamic'
 import { supabaseServer } from '../../lib/supabaseServer'
 import { currency, ym } from '../../lib/utils'
 import { revalidatePath } from 'next/cache'
@@ -37,11 +38,25 @@ async function giveAllowance(formData: FormData): Promise<void> {
   revalidatePath('/allowance')
 }
 
+async function updateMonthly(formData: FormData) {
+  'use server'
+  const supabase = supabaseServer()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  let monthly = Number(formData.get('monthly'))
+  if (!Number.isFinite(monthly)) monthly = 0
+  monthly = Math.max(0, Math.min(1_000_000, Math.floor(monthly)))
+  await supabase.from('users').upsert({ id: user.id, monthly_allowance: monthly }, { onConflict: 'id' })
+  revalidatePath('/allowance')
+  revalidatePath('/dashboard')
+}
+
 export default async function AllowancePage() {
   const supabase = supabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
   const { y, m } = ym()
+  const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single()
   const { data: allowance } = await supabase.from('monthly_allowance').select('*').eq('user_id', user?.id).eq('year', y).eq('month', m).maybeSingle()
   return (
     <div>
@@ -50,6 +65,11 @@ export default async function AllowancePage() {
         <HeaderActions />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
+        <form action={updateMonthly} className="card space-y-3">
+          <h2 className="font-semibold">月額お小遣いの設定</h2>
+          <input name="monthly" type="number" className="input" defaultValue={profile?.monthly_allowance ?? 30000} />
+          <button className="btn w-full">保存</button>
+        </form>
         <div className="card space-y-2">
           <h2 className="mb-2 font-semibold">今月</h2>
           {allowance ? (

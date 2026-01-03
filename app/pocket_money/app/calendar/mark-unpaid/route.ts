@@ -5,9 +5,11 @@ import { createServerClient } from '@supabase/ssr'
 export async function POST(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
-  if (!supabaseUrl || !supabaseAnonKey) return NextResponse.redirect(new URL('/calendar', request.url))
+  const origin = new URL(request.url).origin
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || ''
+  if (!supabaseUrl || !supabaseAnonKey) return NextResponse.redirect(new URL(`${base}/calendar`, origin))
 
-  const res = NextResponse.redirect(new URL('/calendar', request.url))
+  const res = NextResponse.redirect(new URL(`${base}/calendar`, origin))
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get: (name: string) => request.cookies.get(name)?.value,
@@ -30,4 +32,3 @@ export async function POST(request: NextRequest) {
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
-

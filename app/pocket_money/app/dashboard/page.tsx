@@ -1,5 +1,6 @@
 // app/dashboard/page.tsx - Dashboard for both users
 import HeaderActions from '../../components/Header'
+import Link from 'next/link'
 import { supabaseServer } from '../../lib/supabaseServer'
 import { currency, ym } from '../../lib/utils'
 import { revalidatePath } from 'next/cache'
@@ -180,9 +181,9 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold">チェック（簡易）</h2>
             <div className="flex gap-1 text-xs">
-              <a className={`btn btn-secondary !px-2 !py-0.5 ${range==='year'?'!bg-blue-100':''}`} href="/dashboard?range=year">今年1年</a>
-              <a className={`btn btn-secondary !px-2 !py-0.5 ${range==='rolling'?'!bg-blue-100':''}`} href="/dashboard?range=rolling">当月から1年</a>
-              <a className={`btn btn-secondary !px-2 !py-0.5 ${range==='half'?'!bg-blue-100':''}`} href="/dashboard?range=half">前後半年ずつ</a>
+              <Link className={`btn btn-secondary !px-2 !py-0.5 ${range==='year'?'!bg-blue-100':''}`} href="/dashboard?range=year">今年1年</Link>
+              <Link className={`btn btn-secondary !px-2 !py-0.5 ${range==='rolling'?'!bg-blue-100':''}`} href="/dashboard?range=rolling">当月から1年</Link>
+              <Link className={`btn btn-secondary !px-2 !py-0.5 ${range==='half'?'!bg-blue-100':''}`} href="/dashboard?range=half">前後半年ずつ</Link>
             </div>
           </div>
           <div className="grid grid-cols-4 gap-1">

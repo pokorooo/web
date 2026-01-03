@@ -1,5 +1,6 @@
 // app/debt/page.tsx - Debt management
 import HeaderActions from '../../components/Header'
+export const dynamic = 'force-dynamic'
 import { supabaseServer } from '../../lib/supabaseServer'
 import { currency } from '../../lib/utils'
 import { revalidatePath } from 'next/cache'
