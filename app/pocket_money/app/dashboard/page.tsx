@@ -2,7 +2,7 @@
 import HeaderActions from '../../components/Header'
 import Link from 'next/link'
 import { supabaseServer } from '../../lib/supabaseServer'
-import { currency, ym } from '../../lib/utils'
+import { currency } from '../../lib/utils'
 import { computePayDate, nextScheduledPayDate, ymd } from '../../lib/payday'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -14,7 +14,6 @@ async function fetchData() {
   const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single()
   const { data: debts } = await supabase.from('debt').select('*').eq('user_id', user.id)
   const debtBalance = (debts ?? []).reduce((acc: number, d: any) => acc + Number(d.amount), 0)
-  const autoBalance = (debts ?? []).filter((d: any) => d.auto_deduct).reduce((acc: number, d: any) => acc + Number(d.amount), 0)
   const today = new Date()
   const y = today.getFullYear(); const m = today.getMonth() + 1
   const { data: allowance } = await supabase.from('monthly_allowance').select('*').eq('user_id', user.id).eq('year', y).eq('month', m).maybeSingle()
@@ -24,7 +23,7 @@ async function fetchData() {
     .select('year,month,status,amount_given')
     .eq('user_id', user.id)
     .in('year', [y - 1, y, y + 1])
-  return { user, profile, debtBalance, autoBalance, allowance, rows: rows ?? [], y, m }
+  return { user, profile, debtBalance, allowance, rows: rows ?? [], y, m, debts: debts ?? [] }
 }
 
 export default async function DashboardPage({ searchParams }: { searchParams?: { range?: string } }) {
@@ -37,7 +36,36 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
     : 'backward') as any
   const scheduled = computePayDate(data.y, data.m, payDay, payShift)
   const upcoming = nextScheduledPayDate(new Date(), payDay, payShift)
+  // Highlight upcoming pay date when 3 days or less
+  const toLocal = (d: Date) => new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+  const todayLocal = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
+  const upcomingLocal = toLocal(upcoming)
+  const msPerDay = 24 * 60 * 60 * 1000
+  const daysUntilUpcoming = Math.ceil((upcomingLocal.getTime() - todayLocal.getTime()) / msPerDay)
+  const highlightUpcoming = daysUntilUpcoming >= 0 && daysUntilUpcoming <= 3
   const range = (searchParams?.range === 'rolling' || searchParams?.range === 'half') ? searchParams?.range : 'year'
+  // Cards: compute this month metrics
+  const monthStart = new Date(data.y, data.m - 1, 1)
+  const nextStart = new Date(data.y, data.m, 1)
+  const inMonth = (data.debts as any[]).filter((d: any) => {
+    const dt = new Date(d.date)
+    return dt >= monthStart && dt < nextStart
+  })
+  const repayThisMonth = inMonth
+    .filter((d: any) => Number(d.amount) < 0)
+    .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
+  const currentDebt = Math.max(0, data.debtBalance)
+  // 返済前の借金額（= 現在 + 今月返済）
+  const beforeRepay = Math.max(0, currentDebt + repayThisMonth)
+  const baseMonthly = Math.max(0, Number((data.profile as any)?.monthly_allowance ?? 0))
+  const takeHome = data.allowance?.status === 'paid'
+    ? Math.max(0, Number(data.allowance?.amount_given ?? 0))
+    : Math.max(0, baseMonthly - repayThisMonth)
+  // 今月お小遣いの内訳（通常分/追加分）
+  const baseAfterDeduct = Math.max(0, baseMonthly - repayThisMonth)
+  const paidGiven = takeHome
+  const usualPart = Math.max(0, Math.min(paidGiven, baseAfterDeduct))
+  const extraPart = Math.max(0, paidGiven - usualPart)
   // Build months to display according to range mode
   const months: Array<{ y: number; m: number }> = []
   if (range === 'year') {
@@ -92,38 +120,35 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
     await supabase.from('debt').delete().eq('user_id', user.id).eq('auto_deduct', true).lt('amount', 0).in('memo', [`自動控除(返済) ${ymTag}`, `自動控除(ダッシュボード指定) ${ymTag}`])
     revalidatePath('/dashboard')
   }
-  async function giveThisMonthWithDeduct(formData: FormData) {
+  async function addTopup(formData: FormData) {
     'use server'
     const supabase = supabaseServer()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { y, m } = ym()
-    // ベースは設定の月額
-    const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single()
-    const base = Math.max(0, Number(profile?.monthly_allowance ?? 0))
-    // 借金残高（自動控除対象と全体の両方を見て、0の場合は全体残高を使用）
-    const { data: debts } = await supabase.from('debt').select('*').eq('user_id', user.id)
-    const auto = (debts ?? []).filter((d: any) => d.auto_deduct)
-    const autoBalance = Math.max(0, auto.reduce((acc: number, d: any) => acc + Number(d.amount), 0))
-    const allBalance = Math.max(0, (debts ?? []).reduce((acc: number, d: any) => acc + Number(d.amount), 0))
-    const sourceBalance = autoBalance > 0 ? autoBalance : allBalance
-    const maxRepay = Math.min(sourceBalance, base)
-    let desired = Number(formData.get('deduct') ?? 0)
-    if (!Number.isFinite(desired)) desired = 0
-    desired = Math.max(0, Math.min(10_000_000, Math.floor(desired)))
-    const repay = Math.max(0, Math.min(desired, maxRepay))
-    const finalAmount = Math.max(base - repay, 0)
-    if (repay > 0) {
-      const ymTag = `${y}-${String(m).padStart(2, '0')}`
-      await supabase.from('debt').insert({ user_id: user.id, amount: -repay, memo: `自動控除(ダッシュボード指定) ${ymTag}`, date: new Date().toISOString(), auto_deduct: true })
+    const y = Number(formData.get('year'))
+    const m = Number(formData.get('month'))
+    let top = Number(formData.get('top'))
+    if (!Number.isFinite(top)) top = 0
+    top = Math.max(0, Math.min(10_000_000, Math.floor(top)))
+    if (top <= 0) {
+      revalidatePath('/dashboard')
+      return
     }
+    const { data: existing } = await supabase
+      .from('monthly_allowance')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('year', y)
+      .eq('month', m)
+      .maybeSingle()
+    const current = Math.max(0, Number(existing?.amount_given ?? 0))
     await supabase.from('monthly_allowance').upsert({
       user_id: user.id,
       year: y,
       month: m,
-      amount_given: finalAmount,
+      amount_given: current + top,
       given_date: new Date().toISOString(),
-      status: 'paid'
+      status: 'paid',
     }, { onConflict: 'user_id,year,month' })
     revalidatePath('/dashboard')
   }
@@ -133,59 +158,48 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
         <h1 className="text-xl font-bold">ダッシュボード</h1>
         <HeaderActions />
       </div>
-      <p className="mb-3 text-sm text-gray-600">今月の予定支給日: <b>{ymd(scheduled)}</b> ／ 次回予定: <b>{ymd(upcoming)}</b></p>
+      {/* Upcoming banner above cards */}
+      {highlightUpcoming ? (
+        <div className="mb-3 rounded border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-sm">
+          <span className="font-semibold">支給予定日まであと {daysUntilUpcoming} 日</span>
+          <span className="ml-2">（次回: {ymd(upcoming)}）</span>
+        </div>
+      ) : (
+        <p className="mb-3 text-sm text-gray-600">今月の予定支給日: <b>{ymd(scheduled)}</b> ／ 次回予定: <b>{ymd(upcoming)}</b></p>
+      )}
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div className="card">
+          <div className="text-xs text-slate-600">月額のお小遣い</div>
+          <div className="text-2xl font-bold text-blue-900">{currency(baseMonthly)}</div>
+          <div className="text-[11px] text-slate-500">設定値</div>
+        </div>
+        <div className="card">
+          <div className="text-xs text-slate-600">現在の借金</div>
+          <div className="text-2xl font-bold text-rose-900">{currency(currentDebt)}</div>
+          <div className="text-[11px] text-slate-500">残高</div>
+          <div className="mt-1 text-[11px] text-slate-600">返済前: {currency(beforeRepay)}</div>
+        </div>
+        <div className="card">
+          <div className="text-xs text-slate-600">今月の返済額</div>
+          <div className="text-2xl font-bold text-amber-900">{currency(repayThisMonth)}</div>
+          <div className="text-[11px] text-slate-500">目安</div>
+        </div>
+        <div className="card">
+          <div className="text-xs text-slate-600">今月のお小遣い</div>
+          <div className="text-2xl font-bold text-emerald-900">{currency(takeHome)}</div>
+          <div className="text-[11px] text-slate-500">{data.allowance?.status === 'paid' ? '支給額' : '手取り見込み'}</div>
+          <div className="mt-1 text-[11px] text-slate-600">通常: {currency(usualPart)} ／ 追加: {currency(extraPart)}</div>
+          <form action={addTopup} className="mt-2 flex items-center gap-1 text-[11px]">
+            <input type="hidden" name="year" value={data.y} />
+            <input type="hidden" name="month" value={data.m} />
+            <input name="top" type="number" min={1} placeholder="例: 5000" className="input !h-8 !py-1 !px-2 w-24 text-[11px]" />
+            <button className="btn btn-secondary !h-8 !px-2 text-[11px] whitespace-nowrap">追加</button>
+          </form>
+        </div>
+      </div>
+      
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="card">
-          <h2 className="mb-2 font-semibold">あなたの設定</h2>
-          <p>月額お小遣い: <b>{currency(data.profile?.monthly_allowance ?? 0)}</b></p>
-          <p className="mt-1 text-sm text-gray-600">現在の借金: <b>{currency(data.debtBalance)}</b></p>
-          <p className="mt-1 text-sm">差引支給額(自動控除後の目安): <b>{currency(Math.max((data.profile?.monthly_allowance ?? 0) - Math.max(data.autoBalance, 0), 0))}</b></p>
-        </div>
-        <div className="card">
-          <h2 className="mb-2 font-semibold">今月のお小遣い</h2>
-          {data.allowance && data.allowance.status === 'paid' ? (
-            <div className="space-y-2">
-              <p>ステータス: <b>{data.allowance.status}</b></p>
-              <p>支給額: <b>{currency(data.allowance.amount_given)}</b></p>
-              <p className="text-xs text-gray-500">{data.y}/{data.m}</p>
-              <form action={async () => {
-                'use server'
-                const supabase = supabaseServer()
-                const { data: { user } } = await supabase.auth.getUser()
-                if (!user) return
-                const { y, m } = ym()
-                await supabase.from('monthly_allowance').update({ status: 'unpaid' }).eq('user_id', user.id).eq('year', y).eq('month', m)
-                const ymTag = `${y}-${String(m).padStart(2, '0')}`
-                await supabase.from('debt').delete().eq('user_id', user.id).eq('auto_deduct', true).lt('amount', 0).in('memo', [`自動控除(返済) ${ymTag}`, `自動控除(ダッシュボード指定) ${ymTag}`])
-                revalidatePath('/dashboard')
-              }}>
-                <button className="btn btn-secondary">未支給に戻す</button>
-              </form>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <p>未登録です。今月の支給額と控除額を指定して登録できます。</p>
-              <p className="text-sm text-gray-600">月額: <b>{currency(data.profile?.monthly_allowance ?? 0)}</b> ／ 控除対象の借金残高: <b>{currency(Math.max(data.autoBalance, 0) || Math.max(data.debtBalance, 0))}</b></p>
-              {(() => {
-                const base = Math.max(0, Number(data.profile?.monthly_allowance ?? 0))
-                const posAuto = Math.max(data.autoBalance, 0)
-                const posAll = Math.max(data.debtBalance, 0)
-                const targetBalance = posAuto > 0 ? posAuto : posAll
-                const maxDeduct = Math.min(targetBalance, base)
-                const defaultRepay = maxDeduct
-                const defaultFinal = Math.max(base - defaultRepay, 0)
-                return (
-                  <form action={giveThisMonthWithDeduct} className="space-y-2">
-                    <label className="label">差し引く金額（0〜{currency(maxDeduct)} の範囲内）</label>
-                    <input name="deduct" type="number" min={0} max={Math.floor(maxDeduct)} defaultValue={Math.floor(defaultRepay)} className="input" required />
-                    <p className="text-xs text-gray-500">送信時に上限内に補正します。初期値の支給額目安: {currency(defaultFinal)}</p>
-                    <button className="btn">今月分を支給</button>
-                  </form>
-                )
-              })()}
-            </div>
-          )}
-        </div>
         <div className="card">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold">チェック（簡易）</h2>
