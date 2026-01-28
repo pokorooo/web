@@ -1,5 +1,6 @@
 // app/dashboard/page.tsx - Dashboard for both users
 import HeaderActions from '../../components/Header'
+import RepaySimulator from '../../components/dashboard/RepaySimulator'
 import Link from 'next/link'
 import { supabaseServer } from '../../lib/supabaseServer'
 import { currency } from '../../lib/utils'
@@ -202,7 +203,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
       <div className="grid gap-4 md:grid-cols-2">
         <div className="card">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="font-semibold">チェック（簡易）</h2>
+            <h2 className="font-semibold">チェック</h2>
             <div className="flex gap-1 text-xs">
               <Link className={`btn btn-secondary !px-2 !py-0.5 ${range==='year'?'!bg-blue-100':''}`} href="/dashboard?range=year">今年1年</Link>
               <Link className={`btn btn-secondary !px-2 !py-0.5 ${range==='rolling'?'!bg-blue-100':''}`} href="/dashboard?range=rolling">当月から1年</Link>
@@ -243,6 +244,12 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
               )
             })}
           </div>
+        </div>
+        <div className="card">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="font-semibold">返済スケジュール</h2>
+        </div>
+          <RepaySimulator startDebt={currentDebt} monthlyBudget={baseMonthly} />
         </div>
       </div>
     </div>
