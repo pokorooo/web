@@ -52,16 +52,19 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
     const dt = new Date(d.date)
     return dt >= monthStart && dt < nextStart
   })
+  const ymTagThis = `${data.y}-${String(data.m).padStart(2, '0')}`
   const repayThisMonth = inMonth
     .filter((d: any) => Number(d.amount) < 0)
+    .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
+  const dashboardSpecifiedRepay = inMonth
+    .filter((d: any) => Number(d.amount) < 0 && String(d.memo || '') === `自動控除(ダッシュボード指定) ${ymTagThis}`)
     .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
   const currentDebt = Math.max(0, data.debtBalance)
   // 返済前の借金額（= 現在 + 今月返済）
   const beforeRepay = Math.max(0, currentDebt + repayThisMonth)
   const baseMonthly = Math.max(0, Number((data.profile as any)?.monthly_allowance ?? 0))
-  const takeHome = data.allowance?.status === 'paid'
-    ? Math.max(0, Number(data.allowance?.amount_given ?? 0))
-    : Math.max(0, baseMonthly - repayThisMonth)
+  // ダッシュボード表示は常に「月額 - 今月返済」を表示（支給状況に依存しない）
+  const takeHome = Math.max(0, baseMonthly - repayThisMonth)
   // 今月お小遣いの内訳（通常分/追加分）
   const baseAfterDeduct = Math.max(0, baseMonthly - repayThisMonth)
   const paidGiven = takeHome
@@ -109,6 +112,37 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
     }, { onConflict: 'user_id,year,month' })
     revalidatePath('/dashboard')
   }
+  async function setDashboardRepay(formData: FormData) {
+    'use server'
+    const supabase = supabaseServer()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const y = Number(formData.get('year'))
+    const m = Number(formData.get('month'))
+    let raw = Number(formData.get('repay'))
+    if (!Number.isFinite(raw)) raw = 0
+    let amount = Math.max(0, Math.min(10_000_000, Math.floor(raw)))
+    const ymTag = `${y}-${String(m).padStart(2, '0')}`
+    // Delete existing dashboard-specified repayment for this month
+    await supabase
+      .from('debt')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('auto_deduct', true)
+      .lt('amount', 0)
+      .eq('memo', `自動控除(ダッシュボード指定) ${ymTag}`)
+    // Insert new record if positive
+    if (amount > 0) {
+      await supabase.from('debt').insert({
+        user_id: user.id,
+        amount: -amount,
+        memo: `自動控除(ダッシュボード指定) ${ymTag}`,
+        date: new Date().toISOString(),
+        auto_deduct: true,
+      })
+    }
+    revalidatePath('/dashboard')
+  }
   async function markUnpaidQuick(formData: FormData) {
     'use server'
     const supabase = supabaseServer()
@@ -153,6 +187,36 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
     }, { onConflict: 'user_id,year,month' })
     revalidatePath('/dashboard')
   }
+  async function payThisMonth(formData: FormData) {
+    'use server'
+    const supabase = supabaseServer()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const y = Number(formData.get('year'))
+    const m = Number(formData.get('month'))
+    // 支給額は「今月のお小遣い」表示額 = 月額 - 今月返済
+    const { data: profile } = await supabase.from('users').select('monthly_allowance').eq('id', user.id).maybeSingle()
+    const baseMonthly = Math.max(0, Number(profile?.monthly_allowance ?? 0))
+    const monthStart = new Date(y, m - 1, 1)
+    const nextStart = new Date(y, m, 1)
+    const { data: debts } = await supabase.from('debt').select('amount,date,memo').eq('user_id', user.id)
+    const repayThisMonth = (debts ?? [])
+      .filter((d: any) => {
+        const dt = new Date(d.date)
+        return dt >= monthStart && dt < nextStart && Number(d.amount) < 0
+      })
+      .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
+    const finalAmount = Math.max(0, Math.min(10_000_000, Math.floor(baseMonthly - repayThisMonth)))
+    await supabase.from('monthly_allowance').upsert({
+      user_id: user.id,
+      year: y,
+      month: m,
+      amount_given: finalAmount,
+      given_date: new Date().toISOString(),
+      status: 'paid',
+    }, { onConflict: 'user_id,year,month' })
+    revalidatePath('/dashboard')
+  }
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -184,11 +248,28 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
         <div className="card">
           <div className="text-xs text-slate-600">今月の返済額</div>
           <div className="text-2xl font-bold text-amber-900">{currency(repayThisMonth)}</div>
-          <div className="text-[11px] text-slate-500">目安</div>
+          <div className="text-[11px] text-slate-500">目安（合計）</div>
+          <form action={setDashboardRepay} className="mt-2 flex items-center gap-1 text-[11px]">
+            <input type="hidden" name="year" value={data.y} />
+            <input type="hidden" name="month" value={data.m} />
+            <input name="repay" type="number" min={0} placeholder="例: 5000" defaultValue={Math.floor(dashboardSpecifiedRepay)} className="input !h-8 !py-1 !px-2 w-24 text-[11px]" />
+            <button className="btn btn-secondary !h-8 !px-2 text-[11px] whitespace-nowrap">指定</button>
+          </form>
         </div>
         <div className="card">
           <div className="text-xs text-slate-600">今月のお小遣い</div>
-          <div className="text-2xl font-bold text-emerald-900">{currency(takeHome)}</div>
+          <div className="flex items-center justify-between">
+            <div className="text-2xl font-bold text-emerald-900">{currency(takeHome)}</div>
+            {data.allowance?.status !== 'paid' ? (
+              <form action={payThisMonth} className="ml-2">
+                <input type="hidden" name="year" value={data.y} />
+                <input type="hidden" name="month" value={data.m} />
+                <button className="btn !h-8 !px-3 text-[11px]">支給</button>
+              </form>
+            ) : (
+              <span className="ml-2 text-[11px] text-emerald-700">支給済</span>
+            )}
+          </div>
           <div className="text-[11px] text-slate-500">{data.allowance?.status === 'paid' ? '支給額' : '手取り見込み'}</div>
           <div className="mt-1 text-[11px] text-slate-600">通常: {currency(usualPart)} ／ 追加: {currency(extraPart)}</div>
           <form action={addTopup} className="mt-2 flex items-center gap-1 text-[11px]">
@@ -215,15 +296,26 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
               const rec = (data.rows as any[]).find((r) => Number(r.year) === yy && Number(r.month) === mm)
               const paid = rec?.status === 'paid'
               const isCurrent = yy === data.y && mm === data.m
+              const monthStartBox = new Date(yy, mm - 1, 1)
+              const nextStartBox = new Date(yy, mm, 1)
+              const repayForMonth = (data.debts as any[])
+                .filter((d: any) => {
+                  const dt = new Date(d.date)
+                  return dt >= monthStartBox && dt < nextStartBox && Number(d.amount) < 0
+                })
+                .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
+              const baseMonthlyForTile = Math.max(0, Number((data.profile as any)?.monthly_allowance ?? 0))
+              const tileTakeHome = Math.max(0, baseMonthlyForTile - repayForMonth)
+              const displayAmount = isCurrent
+                ? takeHome
+                : (paid ? Number(rec?.amount_given ?? 0) : tileTakeHome)
               return (
                 <div key={`${yy}-${mm}`} className={`p-0.5 rounded border ${paid ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'} ${isCurrent ? 'ring-1 ring-blue-400' : ''}`}>
                   <div className="text-[10px] flex items-center justify-between">
                     <span className="font-medium">{yy}年 {mm}月</span>
                     <span className={`${paid ? 'text-green-700' : 'text-gray-500'}`}>{paid ? '✓' : '-'}</span>
                   </div>
-                  {paid ? (
-                    <div className="text-[10px] text-gray-700 mt-0.5">{currency(Number(rec?.amount_given ?? 0))}</div>
-                  ) : null}
+                  <div className="text-[10px] text-gray-700 mt-0.5">支給額: {currency(displayAmount)}</div>
                   <div className="mt-0.5 flex gap-1 items-center">
                     {paid ? (
                       <form action={markUnpaidQuick}>
@@ -231,11 +323,17 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
                         <input type="hidden" name="month" value={mm} />
                         <button className="btn btn-secondary !px-1 !py-0.5 text-[10px]">戻す</button>
                       </form>
+                    ) : isCurrent ? (
+                      <form action={payThisMonth}>
+                        <input type="hidden" name="year" value={yy} />
+                        <input type="hidden" name="month" value={mm} />
+                        <button className="btn !px-1 !py-0.5 text-[10px]">支給</button>
+                      </form>
                     ) : (
                       <form action={markPaidQuick} className="flex items-center gap-1">
                         <input type="hidden" name="year" value={yy} />
                         <input type="hidden" name="month" value={mm} />
-                        <input type="number" name="amount" min={0} defaultValue={Math.floor(Number(data.profile?.monthly_allowance ?? 0))} className="input w-14 !py-0.5 !px-1 text-[10px]" />
+                        <input type="number" name="amount" min={0} defaultValue={Math.floor(tileTakeHome)} className="input w-14 !py-0.5 !px-1 text-[10px]" />
                         <button className="btn !px-1 !py-0.5 text-[10px]">✓</button>
                       </form>
                     )}
