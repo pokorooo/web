@@ -22,6 +22,15 @@ export default async function AllowancePage() {
     : 'backward') as any
   const scheduled = computePayDate(y, m, payDay, payShift)
   const upcoming = nextScheduledPayDate(new Date(), payDay, payShift)
+  // For showing the correct current-month take-home (same as dashboard)
+  const monthStart = new Date(y, m - 1, 1)
+  const nextStart = new Date(y, m, 1)
+  const { data: debts } = await supabase.from('debt').select('amount,date').eq('user_id', user.id)
+  const repayThisMonth = (debts ?? [])
+    .filter((d: any) => { const dt = new Date(d.date); return dt >= monthStart && dt < nextStart && Number(d.amount) < 0 })
+    .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
+  const baseMonthly = Math.max(0, Number((profile as any)?.monthly_allowance ?? 0))
+  const takeHomeNow = Math.max(0, baseMonthly - repayThisMonth)
   const { data: allowances } = await supabase.from('monthly_allowance')
     .select('*')
     .eq('user_id', user?.id)
@@ -31,7 +40,7 @@ export default async function AllowancePage() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">お小遣い渡し</h1>
+        <h1 className="text-xl font-bold">お小遣い設定</h1>
         <HeaderActions />
       </div>
       <div className="grid grid-cols-1 gap-4">
@@ -90,13 +99,17 @@ export default async function AllowancePage() {
               </tr>
             </thead>
             <tbody>
-              {(allowances ?? []).filter((a: any) => !!a.given_date).map((a: any) => (
-                <tr key={`${a.year}-${a.month}-${a.given_date}`} className="border-t">
-                  <td className="p-2 whitespace-nowrap">{new Date(a.given_date).toLocaleDateString('ja-JP')}</td>
-                  <td className="p-2 whitespace-nowrap">{a.year}年 {a.month}月</td>
-                  <td className="p-2">{currency(a.amount_given)}</td>
-                </tr>
-              ))}
+              {(allowances ?? []).filter((a: any) => !!a.given_date).map((a: any) => {
+                const isCurrent = Number(a.year) === y && Number(a.month) === m
+                const shownAmount = isCurrent ? takeHomeNow : Number(a.amount_given ?? 0)
+                return (
+                  <tr key={`${a.year}-${a.month}-${a.given_date}`} className="border-t">
+                    <td className="p-2 whitespace-nowrap">{new Date(a.given_date).toLocaleDateString('ja-JP')}</td>
+                    <td className="p-2 whitespace-nowrap">{a.year}年 {a.month}月</td>
+                    <td className="p-2">{currency(shownAmount)}</td>
+                  </tr>
+                )
+              })}
               {(!allowances || allowances.filter((a: any) => !!a.given_date).length === 0) && (
                 <tr>
                   <td className="p-2 text-gray-500" colSpan={3}>支給日の履歴がありません</td>

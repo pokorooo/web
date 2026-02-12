@@ -28,7 +28,17 @@ export async function POST(request: NextRequest) {
 
   if (!Number.isFinite(amount) || amount < 0) {
     const { data: profile } = await supabase.from('users').select('monthly_allowance').eq('id', user.id).maybeSingle()
-    amount = Number(profile?.monthly_allowance ?? 0)
+    const baseMonthly = Math.max(0, Number(profile?.monthly_allowance ?? 0))
+    const monthStart = new Date(y, m - 1, 1)
+    const nextStart = new Date(y, m, 1)
+    const { data: debts } = await supabase.from('debt').select('amount,date').eq('user_id', user.id)
+    const repayThisMonth = (debts ?? [])
+      .filter((d: any) => {
+        const dt = new Date(d.date)
+        return dt >= monthStart && dt < nextStart && Number(d.amount) < 0
+      })
+      .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
+    amount = Math.max(0, Math.min(10_000_000, Math.floor(baseMonthly - repayThisMonth)))
   }
 
   await supabase.from('monthly_allowance').upsert({
