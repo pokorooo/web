@@ -57,7 +57,13 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
     .filter((d: any) => Number(d.amount) < 0)
     .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
   const dashboardSpecifiedRepay = inMonth
-    .filter((d: any) => Number(d.amount) < 0 && String(d.memo || '') === `自動控除(ダッシュボード指定) ${ymTagThis}`)
+    .filter((d: any) => {
+      const memo = String(d.memo || '')
+      const oldMemo = `自動控除(ダッシュボード指定) ${ymTagThis}`
+      const newMemoPlain = `自動返済${ymTagThis}のお小遣い`
+      const newMemoBrackets = `【自動返済】${ymTagThis}のお小遣い`
+      return Number(d.amount) < 0 && [oldMemo, newMemoPlain, newMemoBrackets].includes(memo)
+    })
     .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
   const currentDebt = Math.max(0, data.debtBalance)
   // 返済前の借金額（= 現在 + 今月返済）
@@ -130,13 +136,13 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
       .eq('user_id', user.id)
       .eq('auto_deduct', true)
       .lt('amount', 0)
-      .eq('memo', `自動控除(ダッシュボード指定) ${ymTag}`)
+      .in('memo', [`自動控除(ダッシュボード指定) ${ymTag}`, `自動返済${ymTag}のお小遣い`, `【自動返済】${ymTag}のお小遣い`])
     // Insert new record if positive
     if (amount > 0) {
       await supabase.from('debt').insert({
         user_id: user.id,
         amount: -amount,
-        memo: `自動控除(ダッシュボード指定) ${ymTag}`,
+        memo: `【自動返済】${ymTag}のお小遣い`,
         date: new Date().toISOString(),
         auto_deduct: true,
       })
@@ -152,7 +158,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
     const m = Number(formData.get('month'))
     await supabase.from('monthly_allowance').update({ status: 'unpaid' }).eq('user_id', user.id).eq('year', y).eq('month', m)
     const ymTag = `${y}-${String(m).padStart(2, '0')}`
-    await supabase.from('debt').delete().eq('user_id', user.id).eq('auto_deduct', true).lt('amount', 0).in('memo', [`自動控除(返済) ${ymTag}`, `自動控除(ダッシュボード指定) ${ymTag}`])
+    await supabase.from('debt').delete().eq('user_id', user.id).eq('auto_deduct', true).lt('amount', 0).in('memo', [`自動控除(返済) ${ymTag}`, `自動控除(ダッシュボード指定) ${ymTag}`, `自動返済${ymTag}のお小遣い`, `【自動返済】${ymTag}のお小遣い`])
     revalidatePath('/dashboard')
   }
   async function addTopup(formData: FormData) {
