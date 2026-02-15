@@ -2,6 +2,8 @@
 import HeaderActions from '../../components/Header'
 export const dynamic = 'force-dynamic'
 import { supabaseServer } from '../../lib/supabaseServer'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -10,7 +12,23 @@ async function updatePassword(formData: FormData) {
   const pw = String(formData.get('password') || '')
   const confirm = String(formData.get('confirm') || '')
   if (!pw || pw !== confirm) return
-  const supabase = supabaseServer()
+  const cookieStore = cookies()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseAnonKey) return
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value
+      },
+      set(name: string, value: string, options: any) {
+        cookieStore.set({ name, value, ...options })
+      },
+      remove(name: string, options: any) {
+        cookieStore.set({ name, value: '', ...options })
+      },
+    },
+  })
   await supabase.auth.updateUser({ password: pw })
   revalidatePath('/settings')
 }
