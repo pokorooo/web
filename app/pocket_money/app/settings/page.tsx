@@ -5,18 +5,6 @@ import { supabaseServer } from '../../lib/supabaseServer'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-async function saveSettings(formData: FormData) {
-  'use server'
-  const supabase = supabaseServer()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
-  const publicView = formData.get('public') === 'on'
-  // 月額はお小遣いタブで編集するため、ここでは公開設定のみ更新
-  await supabase.from('users').upsert({ id: user.id, public_view: publicView }, { onConflict: 'id' })
-  revalidatePath('/settings')
-  revalidatePath('/dashboard')
-}
-
 async function updatePassword(formData: FormData) {
   'use server'
   const pw = String(formData.get('password') || '')
@@ -57,35 +45,31 @@ export default async function SettingsPage() {
         <HeaderActions />
       </div>
 
-      <form action={saveSettings} className="card max-w-md space-y-3">
-        <h2 className="font-semibold">公開設定</h2>
-        <label className="inline-flex items-center gap-2 text-sm">
-          <input name="public" type="checkbox" defaultChecked={!!profile?.public_view} /> 履歴を相手に公開
-        </label>
-        <button className="btn w-full">保存</button>
-      </form>
+      <div className="grid grid-cols-1 gap-4">
+        <form action={updatePassword} className="card space-y-3">
+          <h2 className="font-semibold">パスワードの設定/変更</h2>
+          <p className="text-xs text-gray-500">設定すると、次回からメール+パスワードで即ログインできます。</p>
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="flex flex-col gap-1 flex-1 min-w-[260px]">
+              <label className="label whitespace-nowrap">新しいパスワード</label>
+              <input name="password" type="password" className="input w-full" minLength={8} required />
+            </div>
+            <div className="flex flex-col gap-1 flex-1 min-w-[260px]">
+              <label className="label whitespace-nowrap">確認</label>
+              <input name="confirm" type="password" className="input w-full" minLength={8} required />
+            </div>
+            <button className="btn">パスワードを更新</button>
+          </div>
+        </form>
 
-      <div className="h-4" />
-
-      <form action={updatePassword} className="card max-w-md space-y-3">
-        <h2 className="font-semibold">パスワードの設定/変更</h2>
-        <p className="text-xs text-gray-500">設定すると、次回からメール+パスワードで即ログインできます。</p>
-        <label className="label">新しいパスワード</label>
-        <input name="password" type="password" className="input" minLength={8} required />
-        <label className="label">確認</label>
-        <input name="confirm" type="password" className="input" minLength={8} required />
-        <button className="btn w-full">パスワードを更新</button>
-      </form>
-
-      <div className="h-4" />
-
-      <form action={clearAll} className="card max-w-md space-y-3">
-        <h2 className="font-semibold text-red-700">全データ削除（履歴・設定の初期化）</h2>
-        <p className="text-xs text-red-600">注意: あなたの前借り履歴とお小遣い履歴をすべて削除し、設定を初期化します。元に戻せません。</p>
-        <label className="label">確認のため「DELETE」と入力</label>
-        <input name="confirm" className="input" placeholder="DELETE" />
-        <button className="btn w-full bg-red-600 hover:bg-red-700">すべて削除</button>
-      </form>
+        <form action={clearAll} className="card space-y-3">
+          <h2 className="font-semibold text-red-700">全データ削除（履歴・設定の初期化）</h2>
+          <p className="text-xs text-red-600">注意: あなたの前借り履歴とお小遣い履歴をすべて削除し、設定を初期化します。元に戻せません。</p>
+          <label className="label">確認のため「DELETE」と入力</label>
+          <input name="confirm" className="input" placeholder="DELETE" />
+          <button className="btn w-full bg-red-600 hover:bg-red-700">すべて削除</button>
+        </form>
+      </div>
     </div>
   )
 }
