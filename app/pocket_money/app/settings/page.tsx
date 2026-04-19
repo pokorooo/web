@@ -1,37 +1,10 @@
 // app/settings/page.tsx - Settings page (monthly allowance, public)
 import HeaderActions from '../../components/Header'
+import PasswordSettingsForm from '../../components/PasswordSettingsForm'
 export const dynamic = 'force-dynamic'
 import { supabaseServer } from '../../lib/supabaseServer'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-
-async function updatePassword(formData: FormData) {
-  'use server'
-  const pw = String(formData.get('password') || '')
-  const confirm = String(formData.get('confirm') || '')
-  if (!pw || pw !== confirm) return
-  const cookieStore = cookies()
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
-  if (!supabaseUrl || !supabaseAnonKey) return
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
-      },
-      set(name: string, value: string, options: any) {
-        cookieStore.set({ name, value, ...options })
-      },
-      remove(name: string, options: any) {
-        cookieStore.set({ name, value: '', ...options })
-      },
-    },
-  })
-  await supabase.auth.updateUser({ password: pw })
-  revalidatePath('/settings')
-}
 
 async function clearAll(formData: FormData) {
   'use server'
@@ -64,21 +37,7 @@ export default async function SettingsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        <form action={updatePassword} className="card space-y-3">
-          <h2 className="font-semibold">パスワードの設定/変更</h2>
-          <p className="text-xs text-gray-500">設定すると、次回からメール+パスワードで即ログインできます。</p>
-          <div className="flex items-end gap-3 flex-wrap">
-            <div className="flex flex-col gap-1 flex-1 min-w-[260px]">
-              <label className="label whitespace-nowrap">新しいパスワード</label>
-              <input name="password" type="password" className="input w-full" minLength={8} required />
-            </div>
-            <div className="flex flex-col gap-1 flex-1 min-w-[260px]">
-              <label className="label whitespace-nowrap">確認</label>
-              <input name="confirm" type="password" className="input w-full" minLength={8} required />
-            </div>
-            <button className="btn">パスワードを更新</button>
-          </div>
-        </form>
+        <PasswordSettingsForm />
 
         <form action={clearAll} className="card space-y-3">
           <h2 className="font-semibold text-red-700">全データ削除（履歴・設定の初期化）</h2>
