@@ -37,6 +37,62 @@ export default async function AllowancePage() {
     .eq('status', 'paid')
     .order('given_date', { ascending: false })
     .limit(50)
+
+  async function payTargetMonth(formData: FormData) {
+    'use server'
+    const supabase = supabaseServer()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const targetMonth = String(formData.get('target_month') || '')
+    const matched = targetMonth.match(/^(\d{4})-(\d{2})$/)
+    if (!matched) return
+
+    const targetYear = Number(matched[1])
+    const targetMonthNumber = Number(matched[2])
+    if (
+      !Number.isInteger(targetYear) ||
+      !Number.isInteger(targetMonthNumber) ||
+      targetYear < 2000 ||
+      targetYear > 2100 ||
+      targetMonthNumber < 1 ||
+      targetMonthNumber > 12
+    ) {
+      return
+    }
+
+    const rawAmount = formData.get('amount')
+    let amount = rawAmount === null || String(rawAmount).trim() === '' ? NaN : Number(rawAmount)
+
+    if (!Number.isFinite(amount)) {
+      const { data: profile } = await supabase.from('users').select('monthly_allowance').eq('id', user.id).maybeSingle()
+      const monthly = Math.max(0, Number(profile?.monthly_allowance ?? 0))
+      const monthStart = new Date(targetYear, targetMonthNumber - 1, 1)
+      const nextStart = new Date(targetYear, targetMonthNumber, 1)
+      const { data: debts } = await supabase.from('debt').select('amount,date').eq('user_id', user.id)
+      const repayForTargetMonth = (debts ?? [])
+        .filter((d: any) => {
+          const dt = new Date(d.date)
+          return dt >= monthStart && dt < nextStart && Number(d.amount) < 0
+        })
+        .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
+      amount = monthly - repayForTargetMonth
+    }
+
+    amount = Math.max(0, Math.min(10_000_000, Math.floor(amount)))
+    await supabase.from('monthly_allowance').upsert({
+      user_id: user.id,
+      year: targetYear,
+      month: targetMonthNumber,
+      amount_given: amount,
+      given_date: new Date().toISOString(),
+      status: 'paid',
+    }, { onConflict: 'user_id,year,month' })
+
+    revalidatePath('/allowance')
+    revalidatePath('/dashboard')
+  }
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
@@ -88,6 +144,29 @@ export default async function AllowancePage() {
           <p className="text-xs text-gray-500">土日を休日として扱います。今月の予定: <b>{ymd(scheduled)}</b> ／ 次回予定: <b>{ymd(upcoming)}</b></p>
         </form>
         {/* 月額の設定は上のフォームに統合 */}
+        <form action={payTargetMonth} className="card space-y-3">
+          <h2 className="font-semibold">対象月を指定して支給</h2>
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
+              <label className="label">支給する月</label>
+              <input
+                name="target_month"
+                type="month"
+                className="input w-full"
+                defaultValue={`${y}-${String(m).padStart(2, '0')}`}
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+              <label className="label">支給額（空なら自動計算）</label>
+              <input name="amount" type="number" min={0} max={10000000} className="input w-full text-right" placeholder="例: 30000" />
+            </div>
+            <button className="btn">支給する</button>
+          </div>
+          <p className="text-xs text-gray-500">
+            空欄の場合は、対象月の「月額 - その月の返済額」で支給します。過去月を選べるので、3月分の支給忘れにも対応できます。
+          </p>
+        </form>
         <div className="card">
           <h2 className="mb-2 font-semibold">お小遣い支給日</h2>
           <table className="w-full text-sm">

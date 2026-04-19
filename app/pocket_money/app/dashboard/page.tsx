@@ -65,6 +65,14 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
       return Number(d.amount) < 0 && [oldMemo, newMemoPlain, newMemoBrackets].includes(memo)
     })
     .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
+  const dashboardRepayMemos = (year: number, month: number) => {
+    const tag = `${year}-${String(month).padStart(2, '0')}`
+    return [
+      `自動控除(ダッシュボード指定) ${tag}`,
+      `自動返済${tag}のお小遣い`,
+      `【自動返済】${tag}のお小遣い`,
+    ]
+  }
   const currentDebt = Math.max(0, data.debtBalance)
   // 返済前の借金額（= 現在 + 今月返済）
   const beforeRepay = Math.max(0, currentDebt + repayThisMonth)
@@ -310,6 +318,9 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
                   return dt >= monthStartBox && dt < nextStartBox && Number(d.amount) < 0
                 })
                 .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
+              const specifiedRepayForMonth = (data.debts as any[])
+                .filter((d: any) => Number(d.amount) < 0 && dashboardRepayMemos(yy, mm).includes(String(d.memo || '')))
+                .reduce((acc: number, d: any) => acc + Math.abs(Number(d.amount)), 0)
               const baseMonthlyForTile = Math.max(0, Number((data.profile as any)?.monthly_allowance ?? 0))
               const tileTakeHome = Math.max(0, baseMonthlyForTile - repayForMonth)
               const displayAmount = isCurrent
@@ -321,6 +332,19 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
                     <span className="font-medium">{yy}年 {mm}月</span>
                     <span className={`${paid ? 'text-green-700' : 'text-gray-500'}`}>{paid ? '✓' : '-'}</span>
                   </div>
+                  <form action={setDashboardRepay} className="mt-0.5 flex gap-1 items-center">
+                    <input type="hidden" name="year" value={yy} />
+                    <input type="hidden" name="month" value={mm} />
+                    <input
+                      type="number"
+                      name="repay"
+                      min={0}
+                      defaultValue={Math.floor(specifiedRepayForMonth)}
+                      className="input w-14 !py-0.5 !px-1 text-[10px]"
+                      aria-label={`${yy}年${mm}月の返済額`}
+                    />
+                    <button className="btn btn-secondary !px-1 !py-0.5 text-[10px]">返済</button>
+                  </form>
                   <div className="text-[10px] text-gray-700 mt-0.5">支給額: {currency(displayAmount)}</div>
                   <div className="mt-0.5 flex gap-1 items-center">
                     {paid ? (
